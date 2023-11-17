@@ -1,0 +1,163 @@
+[
+  {
+    "name": "IRON",
+    "ingredient": [
+      {
+        "type": "forge:ore_dict",
+        "ore": "ingotRefinedIron"
+      },
+      {
+        "type": "forge:ore_dict",
+        "ore": "ingotIron"
+      }
+    ]
+  },
+  {
+    "name": "DUSTIRON",
+    "ingredient": [
+      {
+        "type": "forge:ore_dict",
+        "ore": "dustRefinedIron"
+      },
+      {
+        "type": "forge:ore_dict",
+        "ore": "dustIron"
+      }
+    ]
+  },
+  {
+    "name": "GOLD",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "ingotGold"
+    }
+  },
+  {
+    "name": "DUSTGOLD",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "dustGold"
+    }
+  },
+  {
+    "name": "DIAMOND",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "gemDiamond"
+    }
+  },
+  {
+    "name": "DUSTDIAMOND",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "dustDiamond"
+    }
+  },
+  {
+    "name": "COPPER",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "ingotCopper"
+    }
+  },
+  {
+    "name": "DUSTCOPPER",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "dustCopper"
+    }
+  },
+  {
+    "name": "SILVER",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "ingotSilver"
+    }
+  },
+  {
+    "name": "DUSTSILVER",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "dustSilver"
+    }
+  },
+  {
+    "name": "TIN",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "ingotTin"
+    }
+  },
+  {
+    "name": "DUSTTIN",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "dustTin"
+    }
+  },
+  {
+    "name": "DUSTOBSIDIAN",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "blockObsidian"
+    }
+  },
+  {
+    "name": "GLASS",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "blockGlass"
+    }
+  },
+  {
+    "name": "OBSIDIAN",
+    "ingredient": {
+      "item": "minecraft:obsidian"
+    }
+  },
+  {
+    "name": "DIRT",
+    "ingredient": [
+      {
+        "item": "minecraft:dirt",
+        "data": 0
+      },
+      {
+        "item": "minecraft:dirt",
+        "data": 1
+      },
+      {
+        "item": "minecraft:dirt",
+        "data": 2
+      }
+    ]
+  },
+  {
+    "name": "PLANKS",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "plankWood"
+    }
+  },
+  {
+    "name": "COBBLESTONE",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "cobblestone"
+    }
+  },
+  {
+    "name": "CHEST",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "chest"
+    }
+  },
+  {
+    "name": "STICK",
+    "ingredient": {
+      "type": "forge:ore_dict",
+      "ore": "stickWood"
+    }
+  }
+]

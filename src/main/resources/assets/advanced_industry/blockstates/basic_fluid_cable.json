@@ -1,0 +1,15 @@
+{
+  "forge_marker": 1,
+  "defaults": {
+    "model": "advanced_industry:fluid_cable",
+    "textures": {
+      "fluid_cable": "advanced_industry:blocks/cables/fluid/basic_fluid_cable"
+    }
+  },
+  "variants": {
+    "normal": [{
+    }],
+    "inventory": [{
+    }]
+  }
+}

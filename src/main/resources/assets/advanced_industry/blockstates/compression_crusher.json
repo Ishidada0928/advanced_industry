@@ -1,0 +1,17 @@
+{
+  "forge_marker": 1,
+  "defaults": {
+    "textures": {
+      "particle": "advanced_industry:blocks/compression_crusher"
+    },
+    "uvlock": false
+  },
+  "variants": {
+    "normal": [{
+      "model": "advanced_industry:compression_crusher"
+    }],
+    "inventory": [{
+      "model": "advanced_industry:compression_crusher_item"
+    }]
+  }
+}

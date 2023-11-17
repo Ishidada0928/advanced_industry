@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BAB",
+    "B B",
+    "BAB"
+  ],
+  "key": {
+    "A": {
+      "item": "#COBBLESTONE"
+    },
+    "B": {
+      "item": "#STICK"
+    }
+  },
+  "result": {
+    "item": "advanced_industry:compression_crusher"
+  }
+}

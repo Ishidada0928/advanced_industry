@@ -1,0 +1,108 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "block/block",
+  "textures": {
+    "0": "advanced_industry:items/compression_crusher_item"
+  },
+  "elements": [
+    {
+      "name": "pedestal1",
+      "from": [1, 0.25, 1],
+      "to": [15, 4, 15],
+      "faces": {
+        "north": {"uv": [0, 7, 3.5, 8], "texture": "#0"},
+        "east": {"uv": [7, 0, 10.5, 1], "texture": "#0"},
+        "south": {"uv": [7, 1, 10.5, 2], "texture": "#0"},
+        "west": {"uv": [7, 2, 10.5, 3], "texture": "#0"},
+        "up": {"uv": [3.5, 3.5, 0, 0], "texture": "#0"},
+        "down": {"uv": [3.5, 3.5, 0, 7], "texture": "#0"}
+      }
+    },
+    {
+      "name": "pedestal2",
+      "from": [1, 12, 1],
+      "to": [15, 15.75, 15],
+      "faces": {
+        "north": {"uv": [7, 3, 10.5, 4], "texture": "#0"},
+        "east": {"uv": [3.5, 7, 7, 8], "texture": "#0"},
+        "south": {"uv": [7, 4, 10.5, 5], "texture": "#0"},
+        "west": {"uv": [7, 5, 10.5, 6], "texture": "#0"},
+        "up": {"uv": [7, 3.5, 3.5, 0], "texture": "#0"},
+        "down": {"uv": [7, 3.5, 3.5, 7], "texture": "#0"}
+      }
+    },
+    {
+      "name": "piller1",
+      "from": [14, 0, 0],
+      "to": [16, 16, 2],
+      "faces": {
+        "north": {"uv": [7, 6, 7.5, 10], "texture": "#0"},
+        "east": {"uv": [7.5, 6, 8, 10], "texture": "#0"},
+        "south": {"uv": [0, 8, 0.5, 12], "texture": "#0"},
+        "west": {"uv": [0.5, 8, 1, 12], "texture": "#0"},
+        "up": {"uv": [7, 8.5, 6.5, 8], "texture": "#0"},
+        "down": {"uv": [9, 6, 8.5, 6.5], "texture": "#0"}
+      }
+    },
+    {
+      "name": "piller2",
+      "from": [0, 0, 0],
+      "to": [2, 16, 2],
+      "faces": {
+        "north": {"uv": [1, 8, 1.5, 12], "texture": "#0"},
+        "east": {"uv": [1.5, 8, 2, 12], "texture": "#0"},
+        "south": {"uv": [2, 8, 2.5, 12], "texture": "#0"},
+        "west": {"uv": [2.5, 8, 3, 12], "texture": "#0"},
+        "up": {"uv": [7, 9, 6.5, 8.5], "texture": "#0"},
+        "down": {"uv": [9, 6.5, 8.5, 7], "texture": "#0"}
+      }
+    },
+    {
+      "name": "piller3",
+      "from": [0, 0, 14],
+      "to": [2, 16, 16],
+      "faces": {
+        "north": {"uv": [3, 8, 3.5, 12], "texture": "#0"},
+        "east": {"uv": [3.5, 8, 4, 12], "texture": "#0"},
+        "south": {"uv": [4, 8, 4.5, 12], "texture": "#0"},
+        "west": {"uv": [4.5, 8, 5, 12], "texture": "#0"},
+        "up": {"uv": [9, 7.5, 8.5, 7], "texture": "#0"},
+        "down": {"uv": [9, 7.5, 8.5, 8], "texture": "#0"}
+      }
+    },
+    {
+      "name": "piller4",
+      "from": [14, 0, 14],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": {"uv": [5, 8, 5.5, 12], "texture": "#0"},
+        "east": {"uv": [5.5, 8, 6, 12], "texture": "#0"},
+        "south": {"uv": [6, 8, 6.5, 12], "texture": "#0"},
+        "west": {"uv": [8, 6, 8.5, 10], "texture": "#0"},
+        "up": {"uv": [9, 8.5, 8.5, 8], "texture": "#0"},
+        "down": {"uv": [9, 8.5, 8.5, 9], "texture": "#0"}
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "compression_crusher",
+      "origin": [0, 0, 0],
+      "color": 0,
+      "children": [
+        {
+          "name": "pedestals",
+          "origin": [0, 0, 0],
+          "color": 0,
+          "children": [0, 1]
+        },
+        {
+          "name": "pillers",
+          "origin": [0, 0, 0],
+          "color": 0,
+          "children": [2, 3, 4, 5]
+        }
+      ]
+    }
+  ]
+}

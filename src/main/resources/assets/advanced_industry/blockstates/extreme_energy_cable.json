@@ -1,0 +1,15 @@
+{
+  "forge_marker": 1,
+  "defaults": {
+    "model": "advanced_industry:energy_cable",
+    "textures": {
+      "energy_cable": "advanced_industry:blocks/cables/energy/extreme_energy_cable"
+    }
+  },
+  "variants": {
+    "normal": [{
+    }],
+    "inventory": [{
+    }]
+  }
+}

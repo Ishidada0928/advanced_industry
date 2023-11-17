@@ -1,0 +1,40 @@
+tile.ore_copper.name=Copper Ore
+tile.ore_lead.name=Lead Ore
+tile.ore_nickel.name=Nickel Ore
+tile.ore_osmium.name=Osmium Ore
+tile.ore_silver.name=Silver Ore
+tile.ore_tin.name=Tin Ore
+
+tile.compression_crusher.name=Compression Grinder
+tile.basic_energy_cable.name=Basic Energy Cable
+tile.advanced_energy_cable.name=Advanced Energy Cable
+tile.extreme_energy_cable.name=Extreme Energy Cable
+tile.ultimate_energy_cable.name=Ultimate Energy Cable
+
+tile.basic_fluid_cable.name=Basic Fluid Cable
+tile.advanced_fluid_cable.name=Advanced Fluid Cable
+tile.extreme_fluid_cable.name=Extreme Fluid Cable
+tile.ultimate_fluid_cable.name=Ultimate Fluid Cable
+
+item.dust_copper.name=Copper Dust
+item.dust_lead.name=Lead Dust
+item.dust_nickel.name=Nickel Dust
+item.dust_osmium.name=Osmium Dust
+item.dust_silver.name=Silver Dust
+item.dust_tin.name=Tin Dust
+item.dust_sulfur.name=Sulfur Dust
+item.dust_iron.name=Iron Dust
+item.dust_gold.name=Gold Dust
+item.dust_diamond.name=Diamond Dust
+item.dust_obsidian.name=Obsidian Dust
+
+item.ingot_copper.name=Copper Ingot
+item.ingot_lead.name=Lead Ingot
+item.ingot_nickel.name=Nickel Ingot
+item.ingot_osmium.name=Osmium Ingot
+item.ingot_silver.name=Silver Ingot
+item.ingot_tin.name=Tin Ingot
+
+item.wrench.name=Wrench
+
+tooltip.wrench.info=It is just a wrench. (Not compatible with other mods).

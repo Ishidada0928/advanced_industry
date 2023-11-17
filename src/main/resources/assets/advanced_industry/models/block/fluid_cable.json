@@ -1,0 +1,24 @@
+{
+	"credit": "Made with Blockbench",
+	"parent": "block/block",
+	"texture_size": [32, 32],
+	"textures": {
+		"0": "#fluid_cable",
+		"particle": "#fluid_cable"
+	},
+	"elements": [
+		{
+			"name": "cable",
+			"from": [5, 5, 5],
+			"to": [11, 11, 11],
+			"faces": {
+				"north": {"uv": [3, 3, 6, 6], "texture": "#0"},
+				"east": {"uv": [3, 3, 6, 6], "texture": "#0"},
+				"south": {"uv": [3, 3, 6, 6], "texture": "#0"},
+				"west": {"uv": [3, 3, 6, 6], "texture": "#0"},
+				"up": {"uv": [3, 3, 6, 6], "texture": "#0"},
+				"down": {"uv": [3, 3, 6, 6], "texture": "#0"}
+			}
+		}
+	]
+}

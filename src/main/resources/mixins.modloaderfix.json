@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "package": "com.aki.advanced_industry.mixin",
+  "refmap": "modfix.refmap.json",
+  "minVersion": "0.6",
+  "compatibilityLevel": "JAVA_8",
+  "plugin": "com.aki.advanced_industry.MixinLoaderConfig",
+  "target": "@env(INIT)",
+  "mixins": [
+
+  ],
+  "server": [
+
+  ],
+  "client": [
+    "modsupport.MixinLoader"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
