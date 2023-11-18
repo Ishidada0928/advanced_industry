@@ -44,7 +44,7 @@ public class ItemWrench extends Item {
         return true;
     }
 
-    @Override
+    /*@Override
     public EnumActionResult onItemUseFirst(EntityPlayer playerIn, World worldIn, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ, EnumHand handIn) {
         ItemStack stack = playerIn.getHeldItem(handIn);
         if(!stack.isEmpty() && !worldIn.isRemote) {
@@ -75,5 +75,5 @@ public class ItemWrench extends Item {
             }
         }
         return EnumActionResult.PASS;
-    }
+    }*/
 }

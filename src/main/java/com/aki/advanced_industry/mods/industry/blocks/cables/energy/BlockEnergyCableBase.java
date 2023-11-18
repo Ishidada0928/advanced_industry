@@ -5,10 +5,13 @@ import com.aki.advanced_industry.block.BlockBase;
 import com.aki.advanced_industry.mods.industry.tileentities.cables.energy.TileEnergyCableBase;
 import com.aki.advanced_industry.mods.industry.util.CableConnectionMode;
 import com.aki.advanced_industry.mods.industry.util.IBlockFacingBound;
+import com.aki.advanced_industry.mods.industry.util.WrenchUtil;
 import com.google.common.collect.Lists;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -20,6 +23,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
@@ -54,39 +58,6 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
 
     @Override
     public AxisAlignedBB getSelectedBoundingBox(IBlockState state, World worldIn, BlockPos pos) {
-        /*AxisAlignedBB baseBox = new AxisAlignedBB(0.3125F, 0.3125F, 0.3125F, 0.6875F, 0.6875F, 0.6875F)
-        TileEntity tile = worldIn.getTileEntity(pos);
-        if(tile instanceof TileEnergyCableBase) {
-            for (Map.Entry<EnumFacing, CableConnectionMode> entry : ((TileEnergyCableBase) tile).renderFacingMode.entrySet()) {
-                switch (entry.getKey()) {
-                    case UP:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            baseBox = new AxisAlignedBB(baseBox.minX, baseBox.minY, baseBox.minZ, baseBox.maxX, baseBox.maxY + 0.3125, baseBox.maxZ);
-                        break;
-                    case DOWN:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            baseBox = new AxisAlignedBB(baseBox.minX, 0, baseBox.minZ, baseBox.maxX, baseBox.maxY, baseBox.maxZ);
-                        break;
-                    case NORTH:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            baseBox = new AxisAlignedBB(baseBox.minX, baseBox.minY, 0, baseBox.maxX, baseBox.maxY, baseBox.maxZ);
-                        break;
-                    case EAST:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            baseBox = new AxisAlignedBB(baseBox.minX, baseBox.minY, baseBox.minZ, baseBox.maxX + 0.3125, baseBox.maxY, baseBox.maxZ);
-                        break;
-                    case WEST:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            baseBox = new AxisAlignedBB(0, baseBox.minY, baseBox.minZ, baseBox.maxX, baseBox.maxY + 0.3125, baseBox.maxZ);
-                        break;
-                    case SOUTH:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            baseBox = new AxisAlignedBB(baseBox.minX, baseBox.minY, baseBox.minZ, baseBox.maxX, baseBox.maxY, baseBox.maxZ + 0.3125);
-                        break;
-                }
-            }
-        }
-        return baseBox;*/
         return boundBox.offset(pos);
     }
 
@@ -96,33 +67,7 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
         if(tile instanceof TileEnergyCableBase) {
             for (Map.Entry<EnumFacing, CableConnectionMode> entry : ((TileEnergyCableBase) tile).renderFacingMode.entrySet()) {
                 if(entry.getValue() != CableConnectionMode.CLOSE)
-                    addCollisionBoxToList(pos, entityBox, collidingBoxes, this.getFacingBoundingBox(worldIn, pos).get(entry.getKey()));
-                /*switch (entry.getKey()) {
-                    case UP:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            addCollisionBoxToList(pos, entityBox, collidingBoxes, new AxisAlignedBB(0.3125F, 0.3125F, 0.3125F, 0.6875F, 1.0F, 0.6875F));
-                        break;
-                    case DOWN:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            addCollisionBoxToList(pos, entityBox, collidingBoxes, new AxisAlignedBB(0.3125F, 0.0F, 0.3125F, 0.6875F, 0.3125F, 0.6875F));
-                        break;
-                    case NORTH:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            addCollisionBoxToList(pos, entityBox, collidingBoxes, new AxisAlignedBB(0.3125F, 0.3125F, 0.0F, 0.6875F, 0.6875F, 0.375));
-                        break;
-                    case EAST:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            addCollisionBoxToList(pos, entityBox, collidingBoxes, new AxisAlignedBB(0.6875F, 0.3125F, 0.3125F, 1.0F, 0.6875F, 0.6875F));
-                        break;
-                    case WEST:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            addCollisionBoxToList(pos, entityBox, collidingBoxes, new AxisAlignedBB(0.0F, 0.3125F, 0.3125F, 0.3125F, 0.6875F, 0.6875F));
-                        break;
-                    case SOUTH:
-                        if(entry.getValue() != CableConnectionMode.CLOSE)
-                            addCollisionBoxToList(pos, entityBox, collidingBoxes, new AxisAlignedBB(0.3125F, 0.3125F, 0.6875F, 0.6875F, 0.6875F, 1.0F));
-                        break;
-                }*/
+                    addCollisionBoxToList(pos, entityBox, collidingBoxes, this.getFacingBoundingBox(worldIn, pos, null, false).get(entry.getKey()));
             }
         }
     }
@@ -132,10 +77,12 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
     public RayTraceResult collisionRayTrace(IBlockState blockState, World worldIn, BlockPos pos, Vec3d start, Vec3d end) {
         List<AxisAlignedBB> aabbList = new ArrayList<>(Lists.newArrayList(baseBox));
         TileEntity tile = worldIn.getTileEntity(pos);
-        if(tile instanceof TileEnergyCableBase) {
+        EntityPlayer player = worldIn.getClosestPlayer(start.x, start.y, start.z, 5.0d, false);
+        if(tile instanceof TileEnergyCableBase && player != null) {
+            boolean PlayerHasWrench = WrenchUtil.PlayerHasWrench(player);
             for (Map.Entry<EnumFacing, CableConnectionMode> entry : ((TileEnergyCableBase) tile).renderFacingMode.entrySet()) {
-                if(entry.getValue() != CableConnectionMode.CLOSE)
-                    aabbList.add(getFacingBoundingBox(worldIn, pos).get(entry.getKey()));
+                if(entry.getValue() != CableConnectionMode.CLOSE || PlayerHasWrench)
+                    aabbList.add(getFacingBoundingBox(worldIn, pos, player, PlayerHasWrench).get(entry.getKey()));
             }
         }
 
@@ -161,23 +108,32 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
     }
 
     @Override
-    public LinkedHashMap<EnumFacing, AxisAlignedBB> getFacingBoundingBox(World world, BlockPos pos) {
+    public LinkedHashMap<EnumFacing, AxisAlignedBB> getFacingBoundingBox(World world, BlockPos pos, EntityPlayer player, boolean hasWrench) {
         LinkedHashMap<EnumFacing, AxisAlignedBB> facingMap = new LinkedHashMap<>();
         TileEntity tile = world.getTileEntity(pos);
         if(tile instanceof TileEnergyCableBase) {
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.DOWN) != CableConnectionMode.CLOSE)
+            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.DOWN) != CableConnectionMode.CLOSE || hasWrench)
                 facingMap.put(EnumFacing.DOWN, new AxisAlignedBB(0.3125F, 0.0F, 0.3125F, 0.6875F, 0.3125F, 0.6875F));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.UP) != CableConnectionMode.CLOSE)
+            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.UP) != CableConnectionMode.CLOSE || hasWrench)
                 facingMap.put(EnumFacing.UP, new AxisAlignedBB(0.3125F, 0.3125F, 0.3125F, 0.6875F, 1.0F, 0.6875F));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.NORTH) != CableConnectionMode.CLOSE)
+            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.NORTH) != CableConnectionMode.CLOSE || hasWrench)
                 facingMap.put(EnumFacing.NORTH, new AxisAlignedBB(0.3125F, 0.3125F, 0.0F, 0.6875F, 0.6875F, 0.375));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.SOUTH) != CableConnectionMode.CLOSE)
+            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.SOUTH) != CableConnectionMode.CLOSE || hasWrench)
                 facingMap.put(EnumFacing.SOUTH, new AxisAlignedBB(0.3125F, 0.3125F, 0.6875F, 0.6875F, 0.6875F, 1.0F));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.WEST) != CableConnectionMode.CLOSE)
+            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.WEST) != CableConnectionMode.CLOSE || hasWrench)
                 facingMap.put(EnumFacing.WEST, new AxisAlignedBB(0.0F, 0.3125F, 0.3125F, 0.3125F, 0.6875F, 0.6875F));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.EAST) != CableConnectionMode.CLOSE)
+            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.EAST) != CableConnectionMode.CLOSE || hasWrench)
                 facingMap.put(EnumFacing.EAST, new AxisAlignedBB(0.6875F, 0.3125F, 0.3125F, 1.0F, 0.6875F, 0.6875F));
         }
         return facingMap;
+    }
+
+    public abstract int getMaxSendEnergy();
+
+    @Override
+    public void addInformation(ItemStack stack, @Nullable World player, List<String> tooltip, ITooltipFlag advanced) {
+        tooltip.add(new TextComponentTranslation("tooltip.energy_pipe1.info", this.getMaxSendEnergy()).getUnformattedComponentText());
+        tooltip.add(new TextComponentTranslation("tooltip.energy_pipe2.info").getUnformattedComponentText());
+        super.addInformation(stack, player, tooltip, advanced);
     }
 }

@@ -34,6 +34,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
     //
     public HashMap<EnumFacing, CableConnectionMode> renderFacingMode = new HashMap<>();
     public FluidStack StorageFluid = null;
+    public int SendFluidBase = 0;
     public long Tick = 0;
 
     public HashSet<BlockPos> CornerLocation = new HashSet<>();
@@ -97,10 +98,13 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                 for (Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
                     TileEntity tile = world.getTileEntity(this.getPos().add(entry.getKey().getDirectionVec()));
                     EnumFacing facing = entry.getKey();
+                    if(this.StorageFluid != null) {
+                        this.SendFluidBase = this.StorageFluid.amount;
+                    }
                     switch (entry.getValue()) {
                         case NORMAL:
                             if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()) && this.StorageFluid != null && this.StorageFluid.amount > 0) {
-                                AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(this.StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(MaxSendFluid, StorageFluid.amount), this.FluidReceivers)), true));
+                                AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(this.StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(MaxSendFluid, SendFluidBase), this.FluidReceivers)), true));
                             }
                             /*if(this.StorageFluid == null || this.StorageFluid.amount <= this.MaxSendFluid) {
                                 if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
@@ -119,7 +123,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                         case PUSH:
                             if(!(tile instanceof TileFluidCableBase)) {
                                 if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()) && this.StorageFluid != null && this.StorageFluid.amount > 0) {
-                                    AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(this.StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(MaxSendFluid, StorageFluid.amount), this.FluidReceivers)), true));
+                                    AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(this.StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(MaxSendFluid, SendFluidBase), this.FluidReceivers)), true));
                                 }
                             }
                             break;
@@ -170,7 +174,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                         case PUSH:
                             if (!(tile instanceof TileFluidCableBase)) {
                                 if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()) && ((TileFluidCableBase) StartTile).StorageFluid != null && ((TileFluidCableBase) StartTile).StorageFluid.amount > 0) {
-                                    ((TileFluidCableBase) StartTile).AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(((TileFluidCableBase) StartTile).StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(Max, ((TileFluidCableBase) StartTile).StorageFluid.amount), ((TileFluidCableBase) StartTile).FluidReceivers)), true));
+                                    ((TileFluidCableBase) StartTile).AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(((TileFluidCableBase) StartTile).StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(Max, ((TileFluidCableBase) StartTile).SendFluidBase), ((TileFluidCableBase) StartTile).FluidReceivers)), true));
                                 }
                             }
 

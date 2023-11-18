@@ -26,5 +26,10 @@ public class BlockExtremeEnergyCable extends BlockEnergyCableBase {
     public TileEntity createNewTileEntity(World worldIn, int meta) {
         return new TileExtremeEnergyCable();
     }
+
+    @Override
+    public int getMaxSendEnergy() {
+        return 50000;
+    }
 }
 

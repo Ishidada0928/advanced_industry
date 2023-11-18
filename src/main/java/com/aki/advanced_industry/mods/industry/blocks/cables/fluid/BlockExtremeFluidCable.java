@@ -26,4 +26,9 @@ public class BlockExtremeFluidCable extends BlockFluidCableBase {
     public TileEntity createNewTileEntity(World worldIn, int meta) {
         return new TileExtremeFluidCable();
     }
+
+    @Override
+    public int getMaxSendFluid() {
+        return 50000;
+    }
 }

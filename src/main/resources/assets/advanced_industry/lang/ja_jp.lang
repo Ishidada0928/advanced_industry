@@ -17,6 +17,8 @@ tile.advanced_fluid_cable.name=高度液体ケーブル
 tile.extreme_fluid_cable.name=極限液体ケーブル
 tile.ultimate_fluid_cable.name=究極液体ケーブル
 
+tile.lag_checker.name=ラグチェッカー
+
 item.dust_copper.name=銅の粉末
 item.dust_lead.name=鉛の粉末
 item.dust_nickel.name=ニッケルの粉末
@@ -39,3 +41,7 @@ item.ingot_tin.name=錫インゴット
 item.wrench.name=レンチ
 
 tooltip.wrench.info=ただのレンチです。（ほかのmodと互換性がありません。）
+tooltip.energy_pipe1.info=最大伝送エネルギー(%d RF/tick)
+tooltip.energy_pipe2.info=エネルギーを機器の接続数で割った数1tickあたり伝送します。
+tooltip.fluid_pipe1.info=最大輸液量(%d MB/tick)
+tooltip.fluid_pipe2.info=液体を機器の接続数で割った数1tickあたり輸液します。

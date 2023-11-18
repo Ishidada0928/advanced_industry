@@ -16,6 +16,8 @@ tile.advanced_fluid_cable.name=Advanced Fluid Cable
 tile.extreme_fluid_cable.name=Extreme Fluid Cable
 tile.ultimate_fluid_cable.name=Ultimate Fluid Cable
 
+tile.lag_checker.name=Lag Checker
+
 item.dust_copper.name=Copper Dust
 item.dust_lead.name=Lead Dust
 item.dust_nickel.name=Nickel Dust
@@ -38,3 +40,7 @@ item.ingot_tin.name=Tin Ingot
 item.wrench.name=Wrench
 
 tooltip.wrench.info=It is just a wrench. (Not compatible with other mods).
+tooltip.energy_pipe1.info=Maximum transmission energy (%d RF/tick)
+tooltip.energy_pipe2.info=Energy transmitted per tick divided by the number of devices connected.
+tooltip.fluid_pipe1.info=Maximum infusion volume (%d MB/tick)
+tooltip.fluid_pipe2.info=Infusion per tick of liquid divided by the number of equipment connections.

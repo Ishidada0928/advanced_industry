@@ -1,11 +1,18 @@
 package com.aki.advanced_industry;
 
+import buildcraft.api.tools.IToolWrench;
+import cofh.api.item.IToolHammer;
+import com.aki.advanced_industry.mods.industry.items.tools.ItemWrench;
 import com.aki.advanced_industry.mods.industry.render.cables.fluid.TileRenderFluidCable;
 import com.aki.advanced_industry.mods.industry.render.machines.TileRenderCompressionCrusher;
 import com.aki.advanced_industry.mods.industry.render.cables.energy.TileRenderEnergyCable;
+import com.aki.advanced_industry.mods.industry.tileentities.TileLagChecker;
 import com.aki.advanced_industry.mods.industry.tileentities.cables.energy.*;
 import com.aki.advanced_industry.mods.industry.tileentities.cables.fluid.*;
 import com.aki.advanced_industry.mods.industry.tileentities.machines.TileCompressionCrusher;
+import com.aki.advanced_industry.mods.industry.util.IBlockFacingBound;
+import com.aki.advanced_industry.mods.industry.util.IMachineConfiguration;
+import com.aki.advanced_industry.mods.industry.util.WrenchUtil;
 import com.aki.advanced_industry.packet.PacketTileData;
 import com.aki.advanced_industry.packet.PacketTileDataRequest;
 import com.aki.advanced_industry.packet.PacketTileGuiUpdate;
@@ -13,19 +20,36 @@ import com.aki.advanced_industry.recipe.CrushingRecipeUtils;
 import com.aki.advanced_industry.registry.BlockRegistryHelper;
 import com.aki.advanced_industry.registry.ItemRegistryHelper;
 import com.aki.advanced_industry.tile.handler.TileEntityChunkLoadingHandler;
+import com.aki.advanced_industry.util.RaytraceUtil;
+import com.aki.mcutils.APICore.Utils.list.Pair;
 import com.mojang.authlib.GameProfile;
+import crazypants.enderio.base.item.yetawrench.ItemYetaWrench;
+import crazypants.enderio.powertools.EnderIOPowerTools;
+import mekanism.api.IMekWrench;
+import mekanism.common.integration.wrenches.Wrenches;
 import net.minecraft.block.Block;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.obj.OBJLoader;
 import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -43,6 +67,7 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Mod(modid = AdvancedIndustryCore.ModID, name = AdvancedIndustryCore.ModName, version = AdvancedIndustryCore.ModVersion)
@@ -112,6 +137,8 @@ public class AdvancedIndustryCore {
         GameRegistry.registerTileEntity(TileExtremeFluidCable.class, new ResourceLocation(ModID, "TileExtremeFluidCable"));
         GameRegistry.registerTileEntity(TileUltimateFluidCable.class, new ResourceLocation(ModID, "TileUltimateFluidCable"));
 
+        GameRegistry.registerTileEntity(TileLagChecker.class, new ResourceLocation(ModID, "TileLagChecker"));
+
 
         ForgeChunkManager.setForcedChunkLoadingCallback(INSTANCE, new TileEntityChunkLoadingHandler());
 
@@ -149,7 +176,56 @@ public class AdvancedIndustryCore {
      */
     @Mod.EventHandler
     public void postinit(FMLPostInitializationEvent event) {
+        //My Mod
+        WrenchUtil.AddWrench((item) -> item instanceof ItemWrench);
 
+        if(Loader.isModLoaded("enderio"))
+            WrenchUtil.AddWrench((item) -> item instanceof ItemYetaWrench);
+        if(Loader.isModLoaded("mekanism"))
+            WrenchUtil.AddWrench((item) -> item instanceof IMekWrench);
+        if(Loader.isModLoaded("buildcraft"))
+            WrenchUtil.AddWrench((item) -> item instanceof IToolWrench);
+        if(Loader.isModLoaded("cofhcore"))
+            WrenchUtil.AddWrench((item) -> item instanceof IToolHammer);
+    }
+
+    @SubscribeEvent
+    public void OnRightClickEvent(PlayerInteractEvent.RightClickBlock rightClickBlock) {
+        EntityPlayer playerIn = rightClickBlock.getEntityPlayer();
+        World worldIn = rightClickBlock.getWorld();
+        EnumHand handIn = rightClickBlock.getHand();
+        BlockPos pos = rightClickBlock.getPos();
+        if(!playerIn.isSpectator() && WrenchUtil.PlayerHasWrench(playerIn)) {
+            ItemStack stack = playerIn.getHeldItem(handIn);
+            if(!stack.isEmpty() && !worldIn.isRemote) {
+                TileEntity tile = worldIn.getTileEntity(pos);
+                Pair<Vec3d, Vec3d> pair = RaytraceUtil.getRayTraceVectors(playerIn);
+                RayTraceResult rayTraceResult = worldIn.rayTraceBlocks(pair.getKey(), pair.getValue());
+                EnumFacing facing = rightClickBlock.getFace();
+                Block block = worldIn.getBlockState(pos).getBlock();
+                if(block instanceof IBlockFacingBound) {
+                    if(rayTraceResult != null) {
+                        double dist = Double.POSITIVE_INFINITY;
+                        Pair<Vec3d, Vec3d> vecs = RaytraceUtil.getRayTraceVectors(playerIn);
+                        for (Map.Entry<EnumFacing, AxisAlignedBB> entry : ((IBlockFacingBound) block).getFacingBoundingBox(worldIn, pos, playerIn, WrenchUtil.PlayerHasWrench(playerIn)).entrySet()) {
+                            RayTraceResult result = entry.getValue().offset(pos).calculateIntercept(vecs.getKey(), vecs.getValue());
+                            if (result != null && dist > result.hitVec.distanceTo(vecs.getKey())) {
+                                dist = result.hitVec.distanceTo(vecs.getKey());
+                                facing = entry.getKey();
+                                rayTraceResult = result;
+                            }
+                        }
+                    }
+                }
+                if(tile instanceof IMachineConfiguration && rayTraceResult != null) {
+                    if(playerIn.isSneaking()) {
+                        rightClickBlock.setCancellationResult(((IMachineConfiguration) tile).onSneakRightClick(playerIn, facing, rayTraceResult));
+                    } else {
+                        rightClickBlock.setCancellationResult(((IMachineConfiguration) tile).onRightClick(playerIn, facing, rayTraceResult));
+                    }
+                }
+            }
+        }
     }
 
     @SubscribeEvent

@@ -1,6 +1,7 @@
 package com.aki.advanced_industry;
 
 import com.aki.advanced_industry.mods.industry.CreativeTabAdvancedIndustry;
+import com.aki.advanced_industry.mods.industry.blocks.BlockLagChecker;
 import com.aki.advanced_industry.mods.industry.blocks.cables.energy.BlockAdvancedEnergyCable;
 import com.aki.advanced_industry.mods.industry.blocks.cables.energy.BlockBasicEnergyCable;
 import com.aki.advanced_industry.mods.industry.blocks.cables.energy.BlockExtremeEnergyCable;
@@ -40,6 +41,9 @@ public class ModMaterials {
     //machines
     public static BlockCompressionCrusher compressionCrusher = new BlockCompressionCrusher();
 
+    //misc
+    public static BlockLagChecker lagChecker = new BlockLagChecker();
+
     public static void RegisterBlock() {
         AdvancedIndustryCore.blockRegistryHelper
                 .Init()
@@ -57,7 +61,8 @@ public class ModMaterials {
                 .add(basicFluidCable)
                 .add(advancedFluidCable)
                 .add(extremeFluidCable)
-                .add(ultimateFluidCable);
+                .add(ultimateFluidCable)
+                .add(lagChecker);
     }
 
     public static ItemCopperDust copperDust = new ItemCopperDust();

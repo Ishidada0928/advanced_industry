@@ -12,6 +12,7 @@ import com.aki.mcutils.APICore.DataManage.DataListManager;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -37,6 +38,13 @@ import java.util.List;
 
 public class TileEntityBase extends TileEntity implements ITickable, IPacketTileData, IPacketTileGuiUpdate, IEnergyStorage, IEnergyReceiver {
     public long lastChangeTime = 0;
+
+    /**
+     * 負荷を測定して係数化
+     * */
+    public long LastTickTime = System.nanoTime();
+    public long LagTickDifference = 0L;
+    public long LagTickBase = 50000000L + 30000000L;//これを超えたら重い?
     public ForgeChunkManager.Ticket chunkTicket = null;
 
     public EnergyStorage energyStorage = new EnergyStorage(0);
@@ -150,6 +158,8 @@ public class TileEntityBase extends TileEntity implements ITickable, IPacketTile
     @Override
     public void update() {
         if(!world.isRemote) {
+            this.LagTickDifference = System.nanoTime() - this.LastTickTime;
+            this.LastTickTime = System.nanoTime();
             this.forceUpdatePlayers();
         }
 
