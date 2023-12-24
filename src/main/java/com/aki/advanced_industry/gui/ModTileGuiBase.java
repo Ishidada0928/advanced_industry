@@ -1,34 +1,33 @@
 package com.aki.advanced_industry.gui;
 
 import com.aki.advanced_industry.AdvancedIndustryCore;
+import com.aki.advanced_industry.tile.TileEntityBase;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
+import net.minecraft.inventory.Slot;
 import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class ModGuiBase extends GuiContainer {
-    /**
-     * 文字などの表示用に。
-     * */
-    public ResourceLocation base_texture = new ResourceLocation(AdvancedIndustryCore.ModID, "textures/gui/part/gui_base.png");
-    /**
-     * インベントリのあるものに。
-     * */
-    public ResourceLocation inventory_texture = new ResourceLocation(AdvancedIndustryCore.ModID, "textures/gui/part/inventory/gui_inventory.png");
+public class ModTileGuiBase extends ModGuiBase {
+    public TileEntityBase inventoryTile;
+    public List<ModGuiSlotTex> slotTexes = new ArrayList<>();
 
-    public int baseX;
-    public int baseY;
-    public EntityPlayer player;
-
-    public ModGuiBase(EntityPlayer player, Container inventorySlotsIn) {
-        super(inventorySlotsIn);
-        this.player = player;
-        this.xSize = this.ySize = 184;
-        this.baseX = (this.width - this.xSize) / 2;
-        this.baseY = (this.height - this.ySize) / 2;
+    public ModTileGuiBase(TileEntityBase inventoryTile, EntityPlayer player, Container inventorySlotsIn) {
+        super(player, inventorySlotsIn);
+        this.inventoryTile = inventoryTile;
+        if(this.inventoryTile.HasPlayerInventory()) {
+            for (int y = 0; y < 3; y++) {
+                for (int i = 0; i < 9; i++)
+                    slotTexes.add(new ModGuiSlotTex(12 + i * 18, 102 + y * 18));
+            }
+            for (int x = 0; x < 9; x++)
+                //
+                slotTexes.add(new ModGuiSlotTex(12 + x * 18, 160));
+        }
     }
 
     /**

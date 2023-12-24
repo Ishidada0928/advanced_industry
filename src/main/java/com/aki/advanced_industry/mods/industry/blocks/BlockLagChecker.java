@@ -30,6 +30,7 @@ public class BlockLagChecker extends BlockBase {
     @Override
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
         if(!worldIn.isRemote) {
+
             TileEntity tile = worldIn.getTileEntity(pos);
             if(tile instanceof TileLagChecker) {
                 ((TileLagChecker) tile).OnClick(playerIn);

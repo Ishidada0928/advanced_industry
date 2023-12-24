@@ -1,6 +1,7 @@
 package com.aki.advanced_industry;
 
 import buildcraft.api.tools.IToolWrench;
+import buildcraft.core.item.ItemWrench_Neptune;
 import cofh.api.item.IToolHammer;
 import com.aki.advanced_industry.mods.industry.items.tools.ItemWrench;
 import com.aki.advanced_industry.mods.industry.render.cables.fluid.TileRenderFluidCable;
@@ -139,6 +140,8 @@ public class AdvancedIndustryCore {
 
         GameRegistry.registerTileEntity(TileLagChecker.class, new ResourceLocation(ModID, "TileLagChecker"));
 
+        NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, new ModGuiHandler());
+
 
         ForgeChunkManager.setForcedChunkLoadingCallback(INSTANCE, new TileEntityChunkLoadingHandler());
 
@@ -184,7 +187,7 @@ public class AdvancedIndustryCore {
         if(Loader.isModLoaded("mekanism"))
             WrenchUtil.AddWrench((item) -> item instanceof IMekWrench);
         if(Loader.isModLoaded("buildcraft"))
-            WrenchUtil.AddWrench((item) -> item instanceof IToolWrench);
+            WrenchUtil.AddWrench((item) -> item instanceof ItemWrench_Neptune);
         if(Loader.isModLoaded("cofhcore"))
             WrenchUtil.AddWrench((item) -> item instanceof IToolHammer);
     }

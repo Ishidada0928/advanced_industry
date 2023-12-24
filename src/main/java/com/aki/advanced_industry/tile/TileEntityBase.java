@@ -30,6 +30,7 @@ import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.items.ItemStackHandler;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -331,5 +332,10 @@ public class TileEntityBase extends TileEntity implements ITickable, IPacketTile
     @Override
     public int getMaxEnergyStored() {
         return energyStorage.getMaxEnergyStored();
+    }
+
+    //trueにするとguiにプレイヤーインベントリを表示
+    public boolean HasPlayerInventory() {
+        return false;
     }
 }
