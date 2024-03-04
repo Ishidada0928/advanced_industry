@@ -57,7 +57,7 @@ jar.manifest.attributes(
         'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
         'TweakOrder': '0',
         'FMLAT': 'advanced_industry_at.cfg',
-        'MixinConfigs': "mixins.advanced_industry.json,mixins.modloader.json"
+        'MixinConfigs': "mixins.advanced_industry.json,mixins.modloaderfix.json,mixins.vanillafixer.json"
 )
 
 minecraft {

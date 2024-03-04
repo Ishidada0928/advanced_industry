@@ -1,5 +1,6 @@
 package com.aki.advanced_industry;
 
+import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.fml.relauncher.CoreModManager;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
@@ -35,7 +36,7 @@ public class MixinModLoadConfig implements IFMLLoadingPlugin {
     );
 
     public MixinModLoadConfig() {
-        //fixMixinClasspathOrder();
+        fixMixinClasspathOrder();
 
         MixinBootstrap.init();
         for(String fileName : MixinFiles) {
@@ -48,9 +49,9 @@ public class MixinModLoadConfig implements IFMLLoadingPlugin {
         // Move VanillaFix jar up in the classloader's URLs to make sure that the
         // latest version of Mixin is used (to avoid having to rename 'VanillaFix.jar'
         // to 'aaaVanillaFix.jar')
-        /*URL url = MixinModLoadConfig.class.getProtectionDomain().getCodeSource().getLocation();
+        URL url = MixinModLoadConfig.class.getProtectionDomain().getCodeSource().getLocation();
         givePriorityInClasspath(url, Launch.classLoader);
-        givePriorityInClasspath(url, (URLClassLoader) ClassLoader.getSystemClassLoader());*/
+        givePriorityInClasspath(url, (URLClassLoader) ClassLoader.getSystemClassLoader());
     }
 
     private static void givePriorityInClasspath(URL url, URLClassLoader classLoader) {
