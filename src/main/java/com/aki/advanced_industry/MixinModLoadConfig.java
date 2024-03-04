@@ -1,6 +1,5 @@
 package com.aki.advanced_industry;
 
-import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.fml.relauncher.CoreModManager;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
@@ -8,13 +7,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Mixins;
-import sun.misc.URLClassPath;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +30,6 @@ public class MixinModLoadConfig implements IFMLLoadingPlugin {
     );
 
     public MixinModLoadConfig() {
-        fixMixinClasspathOrder();
-
         MixinBootstrap.init();
         for(String fileName : MixinFiles) {
             Mixins.addConfiguration(fileName);
@@ -45,16 +37,16 @@ public class MixinModLoadConfig implements IFMLLoadingPlugin {
         //.addConfiguration("mixins." +  + ".json");
     }
 
-    private static void fixMixinClasspathOrder() {
+   /* private static void fixMixinClasspathOrder() {
         // Move VanillaFix jar up in the classloader's URLs to make sure that the
         // latest version of Mixin is used (to avoid having to rename 'VanillaFix.jar'
         // to 'aaaVanillaFix.jar')
         URL url = MixinModLoadConfig.class.getProtectionDomain().getCodeSource().getLocation();
         givePriorityInClasspath(url, Launch.classLoader);
         givePriorityInClasspath(url, (URLClassLoader) ClassLoader.getSystemClassLoader());
-    }
+    }*/
 
-    private static void givePriorityInClasspath(URL url, URLClassLoader classLoader) {
+    /*private static void givePriorityInClasspath(URL url, URLClassLoader classLoader) {
         try {
             Field ucpField = URLClassLoader.class.getDeclaredField("ucp");
             ucpField.setAccessible(true);
@@ -68,7 +60,7 @@ public class MixinModLoadConfig implements IFMLLoadingPlugin {
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
-    }
+    }*/
 
 
     @Override
