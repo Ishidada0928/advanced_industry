@@ -1,7 +1,7 @@
 {
   "required": false,
   "package": "com.aki.advanced_industry.mixin",
-  "refmap": "modfix.refmap.json",
+  "refmap": "advanced_industry.refmap.json",
   "minVersion": "0.6",
   "compatibilityLevel": "JAVA_8",
   "target": "@env(DEFAULT)",

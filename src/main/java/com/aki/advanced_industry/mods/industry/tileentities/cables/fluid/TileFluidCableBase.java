@@ -12,12 +12,14 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.FluidTankProperties;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidTankProperties;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,7 +71,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                     EnumFacing facing = entry.getKey();
                     switch (entry.getValue()) {
                         case NORMAL:
-                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing)) {
+                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
                                 this.FluidReceivers++;
                             }
                             if (tile instanceof TileFluidCableBase && ((TileFluidCableBase) tile).facingMode.get(facing) != CableConnectionMode.CLOSE) {
@@ -79,13 +81,13 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                                 if(this.StorageFluid != null && this.StorageFluid.amount > 0)
                                     ((TileFluidCableBase) tile).FluidReceiverCountCheck(this.getPos(), this.Tick);
                             }
-                            if(!(tile instanceof TileFluidCableBase || tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing))) {
+                            if(!(tile instanceof TileFluidCableBase || tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()))) {
                                 renderFacingMode.replace(entry.getKey(), CableConnectionMode.CLOSE);
                             }
                             break;
                         case PUSH:
                         case PULL:
-                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing))
+                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()))
                                     this.FluidReceivers++;
                             break;
                     }
@@ -206,7 +208,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                     switch (entry.getValue()) {
                         case NORMAL:
                         case PUSH:
-                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing)) {
+                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
                                 this.FluidReceivers++;
                             }
 
@@ -315,10 +317,10 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
 
     @Override
     public int fill(FluidStack resource, boolean doFill) {
-        if(resource.getFluid() == this.StorageFluid.getFluid()) {
+        if (this.StorageFluid != null && resource.getFluid() == this.StorageFluid.getFluid()) {
             int remaining = this.MaxSendFluid - this.StorageFluid.amount;
             int filled = Math.min(remaining - resource.amount, Math.min(this.MaxSendFluid, resource.amount));
-            if(doFill) {
+            if (doFill) {
                 this.StorageFluid.amount += filled;
             }
             return filled;
@@ -341,5 +343,14 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
     @Override
     public FluidStack drain(int maxDrain, boolean doDrain) {
         return null;
+    }
+
+    public boolean hasCapability(@Nonnull Capability<?> capability, EnumFacing facing) {
+        return (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facing)) && this.facingMode.get(facing) != CableConnectionMode.CLOSE;
+    }
+
+    public <T> T getCapability(@Nonnull Capability<T> capability, EnumFacing facing) {
+        return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY && this.facingMode.get(facing) != CableConnectionMode.CLOSE ? (T) this : super.getCapability(capability, facing);
+        //return super.getCapability(capability, facing);
     }
 }

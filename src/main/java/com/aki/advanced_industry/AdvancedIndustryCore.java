@@ -1,12 +1,11 @@
 package com.aki.advanced_industry;
 
-import buildcraft.api.tools.IToolWrench;
 import buildcraft.core.item.ItemWrench_Neptune;
 import cofh.api.item.IToolHammer;
 import com.aki.advanced_industry.mods.industry.items.tools.ItemWrench;
+import com.aki.advanced_industry.mods.industry.render.cables.energy.TileRenderEnergyCable;
 import com.aki.advanced_industry.mods.industry.render.cables.fluid.TileRenderFluidCable;
 import com.aki.advanced_industry.mods.industry.render.machines.TileRenderCompressionCrusher;
-import com.aki.advanced_industry.mods.industry.render.cables.energy.TileRenderEnergyCable;
 import com.aki.advanced_industry.mods.industry.tileentities.TileLagChecker;
 import com.aki.advanced_industry.mods.industry.tileentities.cables.energy.*;
 import com.aki.advanced_industry.mods.industry.tileentities.cables.fluid.*;
@@ -25,9 +24,7 @@ import com.aki.advanced_industry.util.RaytraceUtil;
 import com.aki.mcutils.APICore.Utils.list.Pair;
 import com.mojang.authlib.GameProfile;
 import crazypants.enderio.base.item.yetawrench.ItemYetaWrench;
-import crazypants.enderio.powertools.EnderIOPowerTools;
 import mekanism.api.IMekWrench;
-import mekanism.common.integration.wrenches.Wrenches;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -84,7 +81,7 @@ public class AdvancedIndustryCore {
 
     public static Logger logger;
 
-    public static GameProfile modgameprofile = new GameProfile(UUID.nameUUIDFromBytes("RandomMod".getBytes(StandardCharsets.UTF_8)),"[RandomMod]");
+    public static GameProfile modgameprofile = new GameProfile(UUID.nameUUIDFromBytes("AdvancedIndustry".getBytes(StandardCharsets.UTF_8)),"[AdvancedIndustry]");
     public static SimpleNetworkWrapper wrapper = NetworkRegistry.INSTANCE.newSimpleChannel(ModID);
 
     public static BlockRegistryHelper blockRegistryHelper = new BlockRegistryHelper();
@@ -103,6 +100,9 @@ public class AdvancedIndustryCore {
     public void preinit(FMLPreInitializationEvent event) {
         MinecraftForge.EVENT_BUS.register(this);
 
+        /**
+         * renderの初めに必ず読み込む
+         * */
         OBJLoader.INSTANCE.addDomain(ModID);
 
         logger = event.getModLog();
