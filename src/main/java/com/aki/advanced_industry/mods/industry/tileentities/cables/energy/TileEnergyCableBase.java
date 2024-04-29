@@ -67,18 +67,20 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                     EnumFacing facing = entry.getKey();
                     switch (entry.getValue()) {
                         case NORMAL:
-                            if (tile instanceof IEnergyReceiver) {
-                                if ((((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) && !(tile instanceof TileEnergyCableBase)) {
+                            if (!(tile instanceof TileEnergyCableBase)) {
+                                if (tile instanceof IEnergyReceiver) {
+                                    if ((((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite()))) {
+                                        this.EnergyReceivers++;
+                                    }
+                                } else if (tile instanceof IEnergyStorage) {
+                                    this.EnergyReceivers++;
+                                } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
+                                    this.EnergyReceivers++;
+                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
                                     this.EnergyReceivers++;
                                 }
-                            } else if (tile instanceof IEnergyStorage) {
-                                this.EnergyReceivers++;
-                            } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                this.EnergyReceivers++;
-                            } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
-                                this.EnergyReceivers++;
                             }
-                            if (tile instanceof TileEnergyCableBase && ((TileEnergyCableBase) tile).facingMode.get(facing) != CableConnectionMode.CLOSE) {
+                            if (tile instanceof TileEnergyCableBase && ((TileEnergyCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE) {
                                 this.CornerLocation.add(this.pos);
                                 CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
                                 ((TileEnergyCableBase) tile).facingMode.replace(facing.getOpposite(), CableConnectionMode.NORMAL);
@@ -91,12 +93,14 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                             break;
                         case PUSH:
                         case PULL:
-                            if (tile instanceof IEnergyReceiver) {
-                                if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite()) && !(tile instanceof TileEnergyCableBase)) {
+                            if (!(tile instanceof TileEnergyCableBase)) {
+                                if (tile instanceof IEnergyReceiver) {
+                                    if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) {
+                                        this.EnergyReceivers++;
+                                    }
+                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive())
                                     this.EnergyReceivers++;
-                                }
-                            } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive())
-                                this.EnergyReceivers++;
+                            }
                             break;
                     }
                 }
@@ -184,6 +188,27 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
             }
             if (this.Tick > 5)
                 this.sendUpdates();
+        }
+    }
+
+    @Override
+    public void validate() {
+        super.validate();
+        if(!world.isRemote) {
+            for(Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
+                BlockPos side_pos = this.pos.offset(entry.getKey());
+                TileEntity tile = world.getTileEntity(side_pos);
+                if(tile instanceof TileEnergyCableBase) {
+                    TileEnergyCableBase energyCableBase = (TileEnergyCableBase) tile;
+                    if(energyCableBase.facingMode.get(entry.getKey().getOpposite()) != CableConnectionMode.CLOSE) {
+                        this.CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
+                        this.facingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
+                        this.renderFacingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
+                        energyCableBase.facingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
+                        energyCableBase.renderFacingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
+                    }
+                }
+            }
         }
     }
 
