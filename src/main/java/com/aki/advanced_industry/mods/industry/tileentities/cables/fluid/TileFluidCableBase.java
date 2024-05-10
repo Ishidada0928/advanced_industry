@@ -59,6 +59,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
         super.update();
         if(!world.isRemote) {
             Tick++;
+            boolean will_update = false;
             if(this.StorageFluid != null && this.StorageFluid.amount <= 0)
                 this.StorageFluid = null;
             CornerLocation.clear();
@@ -73,6 +74,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                         case NORMAL:
                             if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
                                 this.FluidReceivers++;
+                                will_update = true;
                             }
                             if (tile instanceof TileFluidCableBase && ((TileFluidCableBase) tile).facingMode.get(facing) != CableConnectionMode.CLOSE) {
                                 this.CornerLocation.add(this.pos);
@@ -80,15 +82,19 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                                 ((TileFluidCableBase) tile).facingMode.replace(facing.getOpposite(), CableConnectionMode.NORMAL);
                                 if(this.StorageFluid != null && this.StorageFluid.amount > 0)
                                     ((TileFluidCableBase) tile).FluidReceiverCountCheck(this.getPos(), this.Tick);
+                                will_update = true;
                             }
                             if(!(tile instanceof TileFluidCableBase || tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()))) {
                                 renderFacingMode.replace(entry.getKey(), CableConnectionMode.CLOSE);
+                                will_update = true;
                             }
                             break;
                         case PUSH:
                         case PULL:
-                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()))
-                                    this.FluidReceivers++;
+                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
+                                this.FluidReceivers++;
+                                will_update = true;
+                            }
                             break;
                     }
                 }
@@ -107,6 +113,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                         case NORMAL:
                             if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()) && this.StorageFluid != null && this.StorageFluid.amount > 0) {
                                 AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(this.StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(MaxSendFluid, SendFluidBase), this.FluidReceivers)), true));
+                                will_update = true;
                             }
                             /*if(this.StorageFluid == null || this.StorageFluid.amount <= this.MaxSendFluid) {
                                 if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
@@ -119,6 +126,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                             if (tile instanceof TileFluidCableBase && ((TileFluidCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE && this.StorageFluid != null && this.StorageFluid.amount > 0) {
                                 this.CornerLocation.add(this.pos);
                                 ((TileFluidCableBase) tile).SendFluid(this.getPos(), this.Tick, Math.min(((TileFluidCableBase) tile).MaxSendFluid, this.MaxSendFluid));
+                                will_update = true;
                             }
 
                             break;
@@ -126,6 +134,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                             if(!(tile instanceof TileFluidCableBase)) {
                                 if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()) && this.StorageFluid != null && this.StorageFluid.amount > 0) {
                                     AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(this.StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(MaxSendFluid, SendFluidBase), this.FluidReceivers)), true));
+                                    will_update = true;
                                 }
                             }
                             break;
@@ -134,13 +143,16 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                                 FluidStack stack = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).drain(MaxSendFluid - (StorageFluid != null ? StorageFluid.amount : 0), true);
                                 if(stack != null && (this.StorageFluid == null || this.StorageFluid.getFluid() == stack.getFluid())) {
                                     AddFluidStack(stack, stack.amount);
+                                    will_update = true;
                                 }
                             }
                             break;
                     }
                 }
+
             }
-            this.sendUpdates();
+            if(will_update)
+                this.sendUpdates();
         }
     }
 

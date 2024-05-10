@@ -57,6 +57,7 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
         super.update();
         if (!world.isRemote) {
             Tick++;
+            boolean will_update = false;
             CornerLocation.clear();
             if (Tick % 10 == 0) {
                 this.EnergyReceivers = 0;
@@ -79,6 +80,7 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                                 } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
                                     this.EnergyReceivers++;
                                 }
+                                will_update = true;
                             }
                             if (tile instanceof TileEnergyCableBase && ((TileEnergyCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE) {
                                 this.CornerLocation.add(this.pos);
@@ -86,6 +88,7 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                                 ((TileEnergyCableBase) tile).facingMode.replace(facing.getOpposite(), CableConnectionMode.NORMAL);
                                 if (this.StorageEnergy > 0)
                                     ((TileEnergyCableBase) tile).EnergyReceiverCountCheck(this.getPos(), this.Tick);
+                                will_update = true;
                             }
                             if (!((tile instanceof TileEntityBase) && ((TileEntityBase) tile).canConnectEnergy(facing.getOpposite()) || (tile instanceof IEnergyReceiver && ((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) || tile instanceof IEnergyStorage && !(tile instanceof TileEntityBase) || tile instanceof net.minecraftforge.energy.IEnergyStorage || tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()))) {
                                 renderFacingMode.replace(entry.getKey(), CableConnectionMode.CLOSE);
@@ -97,9 +100,12 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                                 if (tile instanceof IEnergyReceiver) {
                                     if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) {
                                         this.EnergyReceivers++;
+                                        will_update = true;
                                     }
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive())
+                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
                                     this.EnergyReceivers++;
+                                    will_update = true;
+                                }
                             }
                             break;
                     }
@@ -127,6 +133,7 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                                 } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite())) {
                                     StorageEnergy += tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).extractEnergy(MaxSendEnergy - StorageEnergy, false);
                                 }
+                                will_update = true;
                             }
                             if (!(tile instanceof TileEnergyCableBase)) {
                                 if (tile instanceof IEnergyReceiver) {
@@ -140,10 +147,12 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                                 } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
                                     StorageEnergy -= tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
                                 }
+                                will_update = true;
                             }
                             if (tile instanceof TileEnergyCableBase && ((TileEnergyCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE && this.StorageEnergy > 0) {
                                 this.CornerLocation.add(this.pos);
                                 ((TileEnergyCableBase) tile).SendEnergy(this.getPos(), this.Tick, Math.min(((TileEnergyCableBase) tile).MaxSendEnergy, this.MaxSendEnergy));
+                                will_update = true;
                             }
                             break;
                         case PUSH:
@@ -159,6 +168,7 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                                 } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
                                     StorageEnergy -= tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
                                 }
+                                will_update = true;
                             }
                             /*if (!(tile instanceof TileEnergyCableBase)) {
                                 if (tile instanceof IEnergyReceiver) {
@@ -174,19 +184,23 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
                             if (tile instanceof IEnergyProvider) {
                                 if (((IEnergyProvider) tile).canConnectEnergy(facing.getOpposite())) {
                                     StorageEnergy += ((IEnergyProvider) tile).extractEnergy(facing.getOpposite(), MaxSendEnergy - StorageEnergy, false);
+                                    will_update = true;
                                 }
                             } else if (tile instanceof IEnergyStorage) {
                                 StorageEnergy += ((IEnergyStorage) tile).extractEnergy(MaxSendEnergy - StorageEnergy, false);
+                                will_update = true;
                             } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
                                 StorageEnergy += ((net.minecraftforge.energy.IEnergyStorage) tile).extractEnergy(MaxSendEnergy - StorageEnergy, false);
+                                will_update = true;
                             } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite())) {
                                 StorageEnergy += tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).extractEnergy(MaxSendEnergy - StorageEnergy, false);
+                                will_update = true;
                             }
                             break;
                     }
                 }
             }
-            if (this.Tick > 5)
+            if(will_update)
                 this.sendUpdates();
         }
     }
