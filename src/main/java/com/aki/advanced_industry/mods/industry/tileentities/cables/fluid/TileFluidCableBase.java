@@ -159,22 +159,6 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
     @Override
     public void validate() {
         super.validate();
-        if(!world.isRemote) {
-            for(Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
-                BlockPos side_pos = this.pos.offset(entry.getKey());
-                TileEntity tile = world.getTileEntity(side_pos);
-                if(tile instanceof TileFluidCableBase) {
-                     TileFluidCableBase fluidcablebase = (TileFluidCableBase) tile;
-                    if(fluidcablebase.facingMode.get(entry.getKey().getOpposite()) != CableConnectionMode.CLOSE) {
-                        this.CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
-                        this.facingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
-                        this.renderFacingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
-                        fluidcablebase.facingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
-                        fluidcablebase.renderFacingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
-                    }
-                }
-            }
-        }
     }
 
     private void AddFluidStack(FluidStack stack, int add) {

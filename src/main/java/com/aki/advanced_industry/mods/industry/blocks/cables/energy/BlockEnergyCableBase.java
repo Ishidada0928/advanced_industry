@@ -42,6 +42,31 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
     }
 
     @Override
+    public void onBlockAdded(World world, BlockPos pos, IBlockState state) {
+        super.onBlockAdded(world, pos, state);
+        if(!world.isRemote) {
+            TileEntity tile1 = world.getTileEntity(pos);
+            if(tile1 instanceof TileEnergyCableBase) {
+                TileEnergyCableBase energyCableBase1 = (TileEnergyCableBase) tile1;
+                for (Map.Entry<EnumFacing, CableConnectionMode> entry : energyCableBase1.facingMode.entrySet()) {
+                    BlockPos side_pos = pos.offset(entry.getKey());
+                    TileEntity tile2 = world.getTileEntity(side_pos);
+                    if (tile2 instanceof TileEnergyCableBase) {
+                        TileEnergyCableBase energyCableBase2 = (TileEnergyCableBase) tile2;
+                        if (energyCableBase2.facingMode.get(entry.getKey().getOpposite()) != CableConnectionMode.CLOSE) {
+                            energyCableBase1.CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
+                            energyCableBase1.facingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
+                            energyCableBase1.renderFacingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
+                            energyCableBase2.facingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
+                            energyCableBase2.renderFacingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public boolean isOpaqueCube(IBlockState state) {
         return false;
     }

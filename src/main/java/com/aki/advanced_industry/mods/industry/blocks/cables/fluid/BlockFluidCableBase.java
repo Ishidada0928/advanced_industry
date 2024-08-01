@@ -42,6 +42,31 @@ public abstract class BlockFluidCableBase extends BlockBase implements IBlockFac
     }
 
     @Override
+    public void onBlockAdded(World world, BlockPos pos, IBlockState state) {
+        super.onBlockAdded(world, pos, state);
+        if(!world.isRemote) {
+            TileEntity tile1 = world.getTileEntity(pos);
+            if(tile1 instanceof TileFluidCableBase) {
+                TileFluidCableBase fluidCable1 = (TileFluidCableBase) tile1;
+                for (Map.Entry<EnumFacing, CableConnectionMode> entry : fluidCable1.facingMode.entrySet()) {
+                    BlockPos side_pos = pos.offset(entry.getKey());
+                    TileEntity tile2 = world.getTileEntity(side_pos);
+                    if (tile2 instanceof TileFluidCableBase) {
+                        TileFluidCableBase fluidCable2 = (TileFluidCableBase) tile2;
+                        if (fluidCable2.facingMode.get(entry.getKey().getOpposite()) != CableConnectionMode.CLOSE) {
+                            fluidCable1.CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
+                            fluidCable1.facingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
+                            fluidCable1.renderFacingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
+                            fluidCable2.facingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
+                            fluidCable2.renderFacingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public boolean isOpaqueCube(IBlockState state) {
         return false;
     }

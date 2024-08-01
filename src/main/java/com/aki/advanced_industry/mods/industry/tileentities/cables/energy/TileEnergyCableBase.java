@@ -208,22 +208,6 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
     @Override
     public void validate() {
         super.validate();
-        if(!world.isRemote) {
-            for(Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
-                BlockPos side_pos = this.pos.offset(entry.getKey());
-                TileEntity tile = world.getTileEntity(side_pos);
-                if(tile instanceof TileEnergyCableBase) {
-                    TileEnergyCableBase energyCableBase = (TileEnergyCableBase) tile;
-                    if(energyCableBase.facingMode.get(entry.getKey().getOpposite()) != CableConnectionMode.CLOSE) {
-                        this.CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
-                        this.facingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
-                        this.renderFacingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
-                        energyCableBase.facingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
-                        energyCableBase.renderFacingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
-                    }
-                }
-            }
-        }
     }
 
     @Override
