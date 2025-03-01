@@ -1,4 +1,4 @@
-package com.aki.advanced_industry.recipe;
+package com.aki.advanced_industry.mods.industry.recipe;
 
 import com.aki.advanced_industry.ModMaterials;
 import net.minecraft.block.Block;

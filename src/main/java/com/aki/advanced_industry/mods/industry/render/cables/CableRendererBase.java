@@ -18,8 +18,6 @@ public abstract class CableRendererBase<T extends TileEntity> extends TileEntity
         Pull = AdvancedModelLoader.loadModel(new ResourceLocation(AdvancedIndustryCore.ModID, "models/block/obj/cable_pull.obj"));
     }
 
-
-
     @Override
     public boolean isGlobalRenderer(T te) {
         return true;

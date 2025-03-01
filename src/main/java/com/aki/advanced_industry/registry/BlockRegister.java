@@ -2,10 +2,8 @@ package com.aki.advanced_industry.registry;
 
 import com.aki.mcutils.APICore.Utils.list.Pair;
 import net.minecraft.block.Block;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
-import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.RegistryEvent;
 
 import java.util.function.Consumer;

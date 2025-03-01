@@ -29,6 +29,6 @@ public class BlockUltimateEnergyCable extends BlockEnergyCableBase {
 
     @Override
     public int getMaxSendEnergy() {
-        return 250000;
+        return 1024000;
     }
 }

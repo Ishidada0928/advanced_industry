@@ -29,6 +29,6 @@ public class BlockUltimateFluidCable extends BlockFluidCableBase {
 
     @Override
     public int getMaxSendFluid() {
-        return 250000;
+        return 1024000;
     }
 }

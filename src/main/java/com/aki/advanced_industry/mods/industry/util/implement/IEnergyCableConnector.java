@@ -1,6 +1,5 @@
-package com.aki.advanced_industry.mods.industry.util;
+package com.aki.advanced_industry.mods.industry.util.implement;
 
-import cofh.redstoneflux.impl.EnergyStorage;
 import net.minecraft.util.math.BlockPos;
 
 public interface IEnergyCableConnector {

@@ -3,341 +3,203 @@ package com.aki.advanced_industry.mods.industry.tileentities.cables.energy;
 import cofh.redstoneflux.api.IEnergyProvider;
 import cofh.redstoneflux.api.IEnergyReceiver;
 import cofh.redstoneflux.api.IEnergyStorage;
-import com.aki.advanced_industry.mods.industry.util.CableConnectionMode;
-import com.aki.advanced_industry.mods.industry.util.IEnergyCableConnector;
-import com.aki.advanced_industry.mods.industry.util.IMachineConfiguration;
-import com.aki.advanced_industry.tile.TileEntityBase;
-import com.aki.mcutils.APICore.DataManage.DataListManager;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import com.aki.advanced_industry.mods.industry.tileentities.cables.TileCableBase;
+import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
+import com.aki.advanced_industry.mods.industry.util.enums.EnergyImplementType;
+import com.aki.advanced_industry.mods.industry.util.implement.IMachineConfiguration;
+import com.aki.advanced_industry.mods.industry.util.network.cable.EnergyCableManager;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.energy.CapabilityEnergy;
 
-import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+public abstract class TileEnergyCableBase extends TileCableBase implements net.minecraftforge.energy.IEnergyStorage, IMachineConfiguration {
+    private final int MaxSendEnergy;
+    public EnergyCableManager cableManager;
 
-public abstract class TileEnergyCableBase extends TileEntityBase implements IEnergyCableConnector, IEnergyReceiver, net.minecraftforge.energy.IEnergyStorage, IMachineConfiguration {
-    public int MaxSendEnergy;
-    public HashMap<EnumFacing, CableConnectionMode> facingMode = new HashMap<>();
-
-    //
-    public HashMap<EnumFacing, CableConnectionMode> renderFacingMode = new HashMap<>();
-
-    public int StorageEnergy = 0;
-    public int SendEnergyBase = 0;
-
-    public int EnergyReceivers = 0;
-
-    public long Tick = 0;
-
-    public HashSet<BlockPos> CornerLocation = new HashSet<>();
-    public EnumFacing[] CableConnectionFacing = new EnumFacing[6];
-
-    //basic 2000
-    //advanced 6000
-    //extreme 18000
-    //ultimate 144000
     public TileEnergyCableBase(int maxSendEnergy) {
+        super();
         this.MaxSendEnergy = maxSendEnergy;
-        for (EnumFacing facing : EnumFacing.VALUES) {
-            facingMode.put(facing, CableConnectionMode.NORMAL);
-            renderFacingMode.put(facing, CableConnectionMode.CLOSE);
-        }
+        this.cableManager = new EnergyCableManager(this);
     }
 
     @Override
     public void update() {
         super.update();
-        if (!world.isRemote) {
-            Tick++;
-            boolean will_update = false;
-            CornerLocation.clear();
-            if (Tick % 10 == 0) {
-                this.EnergyReceivers = 0;
-                for (Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
-                    CableConnectionFacing[entry.getKey().getIndex()] = null;
-                    renderFacingMode.replace(entry.getKey(), entry.getValue());
-                    TileEntity tile = world.getTileEntity(this.getPos().add(entry.getKey().getDirectionVec()));
-                    EnumFacing facing = entry.getKey();
-                    switch (entry.getValue()) {
-                        case NORMAL:
-                            if (!(tile instanceof TileEnergyCableBase)) {
-                                if (tile instanceof IEnergyReceiver) {
-                                    if ((((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite()))) {
-                                        this.EnergyReceivers++;
-                                    }
-                                } else if (tile instanceof IEnergyStorage) {
-                                    this.EnergyReceivers++;
-                                } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                    this.EnergyReceivers++;
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
-                                    this.EnergyReceivers++;
-                                }
-                                will_update = true;
-                            }
-                            if (tile instanceof TileEnergyCableBase && ((TileEnergyCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE) {
-                                this.CornerLocation.add(this.pos);
-                                CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
-                                ((TileEnergyCableBase) tile).facingMode.replace(facing.getOpposite(), CableConnectionMode.NORMAL);
-                                if (this.StorageEnergy > 0)
-                                    ((TileEnergyCableBase) tile).EnergyReceiverCountCheck(this.getPos(), this.Tick);
-                                will_update = true;
-                            }
-                            if (!((tile instanceof TileEntityBase) && ((TileEntityBase) tile).canConnectEnergy(facing.getOpposite()) || (tile instanceof IEnergyReceiver && ((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) || tile instanceof IEnergyStorage && !(tile instanceof TileEntityBase) || tile instanceof net.minecraftforge.energy.IEnergyStorage || tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()))) {
-                                renderFacingMode.replace(entry.getKey(), CableConnectionMode.CLOSE);
-                            }
-                            break;
-                        case PUSH:
-                        case PULL:
-                            if (!(tile instanceof TileEnergyCableBase)) {
-                                if (tile instanceof IEnergyReceiver) {
-                                    if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) {
-                                        this.EnergyReceivers++;
-                                        will_update = true;
-                                    }
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
-                                    this.EnergyReceivers++;
-                                    will_update = true;
-                                }
-                            }
-                            break;
+        if(!this.world.isRemote) {
+            boolean ThisHost = this.cableManager.getHostPos() == this.pos;
+
+            //初期化
+            if(this.Tick < 0) {
+                for(EnumFacing facing : EnumFacing.VALUES) {
+                    TileEntity tile = this.world.getTileEntity(this.getPos().offset(facing));
+                    if(tile instanceof TileEnergyCableBase) {
+                        TileEnergyCableBase cableBase = (TileEnergyCableBase) tile;
+                        cableBase.SetFacingState(facing.getOpposite(), CableConnectionMode.NORMAL);
+                        this.facingMode.put(facing, CableConnectionMode.NORMAL);
                     }
                 }
-            }
-
-            CornerLocation.clear();
-
-            if (this.EnergyReceivers > 0) {
-                for (Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
-                    TileEntity tile = world.getTileEntity(this.getPos().add(entry.getKey().getDirectionVec()));
-                    EnumFacing facing = entry.getKey();
-                    this.SendEnergyBase = StorageEnergy;
-                    switch (entry.getValue()) {
-                        case NORMAL:
-                            if (this.StorageEnergy <= this.MaxSendEnergy) {
-                                if (tile instanceof IEnergyProvider) {
-                                    if (((IEnergyProvider) tile).canConnectEnergy(facing.getOpposite())) {
-                                        StorageEnergy += ((IEnergyProvider) tile).extractEnergy(facing.getOpposite(), MaxSendEnergy - StorageEnergy, false);
-                                    }
-                                } else if (tile instanceof IEnergyStorage) {
-                                    StorageEnergy += ((IEnergyStorage) tile).extractEnergy(MaxSendEnergy - StorageEnergy, false);
-                                } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                    StorageEnergy += ((net.minecraftforge.energy.IEnergyStorage) tile).extractEnergy(MaxSendEnergy - StorageEnergy, false);
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite())) {
-                                    StorageEnergy += tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).extractEnergy(MaxSendEnergy - StorageEnergy, false);
-                                }
-                                will_update = true;
-                            }
-                            if (!(tile instanceof TileEnergyCableBase)) {
-                                if (tile instanceof IEnergyReceiver) {
-                                    if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) {
-                                        StorageEnergy -= ((IEnergyReceiver) tile).receiveEnergy(facing.getOpposite(), this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                    }
-                                } else if (tile instanceof IEnergyStorage) {
-                                    StorageEnergy -= ((IEnergyStorage) tile).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                    StorageEnergy -= ((net.minecraftforge.energy.IEnergyStorage) tile).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
-                                    StorageEnergy -= tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                }
-                                will_update = true;
-                            }
-                            if (tile instanceof TileEnergyCableBase && ((TileEnergyCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE && this.StorageEnergy > 0) {
-                                this.CornerLocation.add(this.pos);
-                                ((TileEnergyCableBase) tile).SendEnergy(this.getPos(), this.Tick, Math.min(((TileEnergyCableBase) tile).MaxSendEnergy, this.MaxSendEnergy));
-                                will_update = true;
-                            }
-                            break;
-                        case PUSH:
-                            if (!(tile instanceof TileEnergyCableBase)) {
-                                if (tile instanceof IEnergyReceiver) {
-                                    if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) {
-                                        StorageEnergy -= ((IEnergyReceiver) tile).receiveEnergy(facing.getOpposite(), this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                    }
-                                } else if (tile instanceof IEnergyStorage) {
-                                    StorageEnergy -= ((IEnergyStorage) tile).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                    StorageEnergy -= ((net.minecraftforge.energy.IEnergyStorage) tile).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite()) && tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).canReceive()) {
-                                    StorageEnergy -= tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                }
-                                will_update = true;
-                            }
-                            /*if (!(tile instanceof TileEnergyCableBase)) {
-                                if (tile instanceof IEnergyReceiver) {
-                                    if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) {
-                                        StorageEnergy -= ((IEnergyReceiver) tile).receiveEnergy(facing.getOpposite(), this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                    }
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite())) {
-                                    StorageEnergy -= tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).receiveEnergy(this.DividedNotRemainder(Math.min(MaxSendEnergy, SendEnergyBase), this.EnergyReceivers), false);
-                                }
-                            }*/
-                            break;
-                        case PULL:
-                            if (tile instanceof IEnergyProvider) {
-                                if (((IEnergyProvider) tile).canConnectEnergy(facing.getOpposite())) {
-                                    StorageEnergy += ((IEnergyProvider) tile).extractEnergy(facing.getOpposite(), MaxSendEnergy - StorageEnergy, false);
-                                    will_update = true;
-                                }
-                            } else if (tile instanceof IEnergyStorage) {
-                                StorageEnergy += ((IEnergyStorage) tile).extractEnergy(MaxSendEnergy - StorageEnergy, false);
-                                will_update = true;
-                            } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                StorageEnergy += ((net.minecraftforge.energy.IEnergyStorage) tile).extractEnergy(MaxSendEnergy - StorageEnergy, false);
-                                will_update = true;
-                            } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite())) {
-                                StorageEnergy += tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).extractEnergy(MaxSendEnergy - StorageEnergy, false);
-                                will_update = true;
-                            }
-                            break;
-                    }
-                }
-            }
-            if(will_update)
                 this.sendUpdates();
+            }
+
+            this.Tick++;
+            if(1000000L <= this.Tick) {
+                this.Tick = 0L;
+                this.LastChangeTick = 0L;
+            }
+
+            //ケーブルが途中で切れたときに新しいホストに設定。
+            if((this.LastChangeTick + 2) <= this.Tick && !ThisHost) {
+                this.cableManager = new EnergyCableManager(this);
+                ThisHost = true;
+            }
+
+            if(ThisHost) {
+                this.cableManager.Reset();
+                this.cableManager.PutCableTile(this, this.MaxSendEnergy);
+                this.cableManager.setHostTick(this.Tick);
+                //Hostだけ処理する(全探索)。
+                this.ScanCables();
+                this.cableManager.SeparateNetworks();
+                for(TileEnergyCableBase cable : this.cableManager.getEnergyCables().values()) {
+                    cable.ScanMachines();
+                }
+
+                /*
+                 * ここで送受信の処理
+                 */
+                this.cableManager.Update(this.world);
+            }
+        } else {
+
         }
     }
 
-    @Override
-    public void validate() {
-        super.validate();
+    //ここでFacingModeを適用
+    public void ScanCables() {
+        for(EnumFacing facing : EnumFacing.VALUES) {
+            TileEntity tile = this.world.getTileEntity(this.getPos().offset(facing));
+            if(tile instanceof TileEnergyCableBase) {
+                TileEnergyCableBase cableBase = (TileEnergyCableBase) tile;
+                //CableManager が違う場合 CableID が一致しない
+                if((cableBase.getCableManager().getCableID() != this.cableManager.getCableID()) || (cableBase.getLastUpdateTick() != this.cableManager.getHostTick()) && this.facingMode.get(facing) == CableConnectionMode.NORMAL) {
+                    cableBase.OverWriteCableManger(this.cableManager);
+                    cableBase.ScanCables();
+                }
+            }
+        }
     }
+
+    //HostのCableManagerに追加
+    //ここでFacingModeを適用
+    public void ScanMachines() {
+        for(EnumFacing facing : EnumFacing.VALUES) {
+            BlockPos tile_pos = this.getPos().offset(facing);
+            TileEntity tile = this.world.getTileEntity(tile_pos);
+            if(!(tile instanceof TileEnergyCableBase)) {
+                if (this.facingMode.get(facing) != CableConnectionMode.CLOSE) {
+                    EnergyCableManager.CableData cableData = this.cableManager.getCableDataByIndex(this.ECM_Index);
+                    if (tile instanceof IEnergyStorage) {
+                        if(this.facingMode.get(facing) == CableConnectionMode.NORMALCLOSE) {
+                            this.SetFacingState(facing, CableConnectionMode.NORMAL);
+                        }
+                        IEnergyStorage storage = ((IEnergyStorage) tile);
+                        int canExtract = storage.extractEnergy(storage.getEnergyStored(), true);
+                        int needReceive = storage.receiveEnergy(storage.getMaxEnergyStored() - storage.getEnergyStored(), true);
+                        if(canExtract > 0 && this.facingMode.get(facing) != CableConnectionMode.PUSH) {
+                            cableData.AddMachineProviderPos(tile_pos, facing.getOpposite(), EnergyImplementType.RFIENERGYSTORAGE);
+                            cableData.IncreaseProvideEnergy(canExtract);
+                        }
+                        if(needReceive > 0 && this.facingMode.get(facing) != CableConnectionMode.PULL) {
+                            cableData.AddMachineReceiverPos(tile_pos, facing.getOpposite(), EnergyImplementType.RFIENERGYSTORAGE);
+                            cableData.IncreaseNeedEnergy(needReceive);
+                        }
+                    } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
+                        if(this.facingMode.get(facing) == CableConnectionMode.NORMALCLOSE) {
+                            this.SetFacingState(facing, CableConnectionMode.NORMAL);
+                        }
+                        net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
+                        int canExtract = storage.extractEnergy(storage.getEnergyStored(), true);
+                        int needReceive = storage.receiveEnergy(storage.getMaxEnergyStored() - storage.getEnergyStored(), true);
+                        if(canExtract > 0 && storage.canExtract() && this.facingMode.get(facing) != CableConnectionMode.PUSH) {
+                            cableData.AddMachineProviderPos(tile_pos, facing.getOpposite(), EnergyImplementType.FORGEIENERGYSTORAGE);
+                            cableData.IncreaseProvideEnergy(canExtract);
+                        }
+                        if(needReceive > 0 && storage.canReceive()  && this.facingMode.get(facing) != CableConnectionMode.PULL) {
+                            cableData.AddMachineReceiverPos(tile_pos, facing.getOpposite(), EnergyImplementType.FORGEIENERGYSTORAGE);
+                            cableData.IncreaseNeedEnergy(needReceive);
+                        }
+
+                    } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite())) {
+                        if(this.facingMode.get(facing) == CableConnectionMode.NORMALCLOSE) {
+                            this.SetFacingState(facing, CableConnectionMode.NORMAL);
+                        }
+                        net.minecraftforge.energy.IEnergyStorage storage = tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite());
+                        if(storage != null) {
+                            int canExtract = storage.extractEnergy(storage.getEnergyStored(), true);
+                            int needReceive = storage.receiveEnergy(storage.getMaxEnergyStored() - storage.getEnergyStored(), true);
+                            if (canExtract > 0 && storage.canExtract()  && this.facingMode.get(facing) != CableConnectionMode.PUSH) {
+                                cableData.AddMachineProviderPos(tile_pos, facing.getOpposite(), EnergyImplementType.FORGEIENERGYSTORAGE);
+                                cableData.IncreaseProvideEnergy(canExtract);
+                            }
+                            if (needReceive > 0 && storage.canReceive()  && this.facingMode.get(facing) != CableConnectionMode.PULL) {
+                                cableData.AddMachineReceiverPos(tile_pos, facing.getOpposite(), EnergyImplementType.FORGEIENERGYSTORAGE);
+                                cableData.IncreaseNeedEnergy(needReceive);
+                            }
+                        }
+                    } else {
+                        boolean flag = false;
+                         if (tile instanceof IEnergyReceiver && this.facingMode.get(facing) != CableConnectionMode.PULL) {
+                            IEnergyReceiver receiver = ((IEnergyReceiver) tile);
+                            if (receiver.canConnectEnergy(facing.getOpposite())) {
+                                if(this.facingMode.get(facing) == CableConnectionMode.NORMALCLOSE) {
+                                    this.SetFacingState(facing, CableConnectionMode.NORMAL);
+                                }
+                                flag = true;
+                                int needReceive = receiver.getMaxEnergyStored(facing.getOpposite()) - receiver.getEnergyStored(facing.getOpposite());
+                                if (needReceive > 0) {
+                                    cableData.AddMachineReceiverPos(tile_pos, facing.getOpposite(), EnergyImplementType.RFIENERGYRECEIVER);
+                                    cableData.IncreaseNeedEnergy(receiver.receiveEnergy(facing.getOpposite(), needReceive, true));
+                                }
+                            }
+                        }
+
+                        if (tile instanceof IEnergyProvider && this.facingMode.get(facing) != CableConnectionMode.PUSH) {
+                            IEnergyProvider provider = ((IEnergyProvider) tile);
+                            if (provider.canConnectEnergy(facing.getOpposite())) {
+                                if (this.facingMode.get(facing) == CableConnectionMode.NORMALCLOSE) {
+                                    this.SetFacingState(facing, CableConnectionMode.NORMAL);
+                                }
+                                flag = true;
+                                int canExtract = provider.extractEnergy(facing.getOpposite(), provider.getEnergyStored(facing.getOpposite()), true);
+                                if (canExtract > 0) {
+                                    cableData.AddMachineProviderPos(tile_pos, facing.getOpposite(), EnergyImplementType.RFIENERGYPROVIDER);
+                                    cableData.IncreaseProvideEnergy(canExtract);
+                                }
+                            }
+                        }
+
+                        if(!flag && this.facingMode.get(facing) == CableConnectionMode.NORMAL) {
+                            this.SetFacingState(facing, CableConnectionMode.NORMALCLOSE);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void OverWriteCableManger(EnergyCableManager manager) {
+        this.LastUpdateTick = manager.getHostTick();
+        this.LastChangeTick = this.Tick;
+        this.cableManager = manager;
+        this.cableManager.PutCableTile(this, this.MaxSendEnergy);
+    }
+
+
 
     @Override
     public boolean canConnectEnergy(EnumFacing enumFacing) {
         return this.facingMode.get(enumFacing) != CableConnectionMode.CLOSE;
-    }
-
-    /**
-     * 送っている最中、電気を使った場合、供給元の電気を減らす?
-     */
-    @Override//電力を送っている途中
-    public void SendEnergy(BlockPos StartPos, long tick, int maxSendEnergy) {
-        TileEntity StartTile = world.getTileEntity(StartPos);
-        if (StartTile instanceof TileEnergyCableBase) {
-            if (!((TileEnergyCableBase) StartTile).CornerLocation.contains(this.pos)) {
-                ((TileEnergyCableBase) StartTile).CornerLocation.add(this.pos);
-                for (Map.Entry<EnumFacing, CableConnectionMode> entry : this.facingMode.entrySet()) {
-                    EnumFacing facing = entry.getKey();
-                    TileEntity tile = world.getTileEntity(this.getPos().add(facing.getDirectionVec()));
-
-                    switch (entry.getValue()) {
-                        case NORMAL:
-                        case PUSH:
-                            if (!(tile instanceof TileEnergyCableBase)) {
-                                if (tile instanceof IEnergyReceiver) {
-                                    if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) {
-                                        ((TileEnergyCableBase) StartTile).StorageEnergy -= ((IEnergyReceiver) tile).receiveEnergy(facing.getOpposite(), this.DividedNotRemainder(Math.min(maxSendEnergy, ((TileEnergyCableBase) StartTile).SendEnergyBase), ((TileEnergyCableBase) StartTile).EnergyReceivers), false);
-                                    }
-                                } else if (tile instanceof IEnergyStorage) {
-                                    ((TileEnergyCableBase) StartTile).StorageEnergy -= ((IEnergyStorage) tile).receiveEnergy(this.DividedNotRemainder(Math.min(maxSendEnergy, ((TileEnergyCableBase) StartTile).SendEnergyBase), ((TileEnergyCableBase) StartTile).EnergyReceivers), false);
-                                } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                    ((TileEnergyCableBase) StartTile).StorageEnergy -= ((net.minecraftforge.energy.IEnergyStorage) tile).receiveEnergy(this.DividedNotRemainder(Math.min(maxSendEnergy, ((TileEnergyCableBase) StartTile).SendEnergyBase), ((TileEnergyCableBase) StartTile).EnergyReceivers), false);
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite())) {
-                                    ((TileEnergyCableBase) StartTile).StorageEnergy -= tile.getCapability(CapabilityEnergy.ENERGY, facing.getOpposite()).receiveEnergy(this.DividedNotRemainder(Math.min(maxSendEnergy, ((TileEnergyCableBase) StartTile).SendEnergyBase), ((TileEnergyCableBase) StartTile).EnergyReceivers), false);
-                                }
-                            }
-
-                            if (tile instanceof TileEnergyCableBase && ((TileEnergyCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE) {
-                                long nextTick = ((TileEnergyCableBase) tile).Tick;
-                                if (nextTick != tick && nextTick != this.Tick) {//前のTickと今のTickとは次が違う場合
-                                    if (((TileEnergyCableBase) StartTile).StorageEnergy > 0) {
-                                        ((TileEnergyCableBase) tile).SendEnergy(StartPos, this.Tick, Math.min(maxSendEnergy, ((TileEnergyCableBase) tile).MaxSendEnergy));
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
-    public void EnergyReceiverCountCheck(BlockPos StartPos, long tick) {
-        TileEntity StartTile = world.getTileEntity(StartPos);
-        if (StartTile instanceof TileEnergyCableBase) {
-            if (!((TileEnergyCableBase) StartTile).CornerLocation.contains(this.pos)) {
-                ((TileEnergyCableBase) StartTile).CornerLocation.add(this.pos);
-                for (Map.Entry<EnumFacing, CableConnectionMode> entry : this.facingMode.entrySet()) {
-                    EnumFacing facing = entry.getKey();
-                    TileEntity tile = world.getTileEntity(this.getPos().add(facing.getDirectionVec()));
-
-                    switch (entry.getValue()) {
-                        case NORMAL:
-                        case PUSH:
-                            if (!(tile instanceof TileEnergyCableBase)) {
-                                if (tile instanceof IEnergyReceiver) {
-                                    if (((IEnergyReceiver) tile).canConnectEnergy(facing.getOpposite())) {
-                                        ((TileEnergyCableBase) StartTile).EnergyReceivers++;
-                                    }
-                                } else if (tile instanceof IEnergyStorage) {
-                                    ((TileEnergyCableBase) StartTile).EnergyReceivers++;
-                                } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                    ((TileEnergyCableBase) StartTile).EnergyReceivers++;
-                                } else if (tile != null && tile.hasCapability(CapabilityEnergy.ENERGY, facing.getOpposite())) {
-                                    ((TileEnergyCableBase) StartTile).EnergyReceivers++;
-                                }
-                            }
-
-                            if (tile instanceof TileEnergyCableBase) {
-                                long nextTick = ((TileEnergyCableBase) tile).Tick;
-                                if (nextTick != tick && nextTick != this.Tick) {//前のTickと今のTickとは次が違う場合
-                                    if (((TileEnergyCableBase) StartTile).StorageEnergy > 0) {
-                                        ((TileEnergyCableBase) tile).EnergyReceiverCountCheck(StartPos, this.Tick);
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
-            }
-        }
-    }
-
-    private int DividedNotRemainder(int Input, int by) {
-        int Remainder = Input % by;
-        return (Input - Remainder) / by;
-    }
-
-    @Override
-    public int getEnergyStored(EnumFacing enumFacing) {
-        return this.StorageEnergy;
-    }
-
-    @Override
-    public int getMaxEnergyStored(EnumFacing enumFacing) {
-        return MaxSendEnergy;
-    }
-
-    @Override
-    public int receiveEnergy(int i, boolean b) {
-        int ReceiveEnergy = Math.min(i, this.MaxSendEnergy - this.StorageEnergy);
-        if (!b)
-            this.StorageEnergy += ReceiveEnergy;
-        return ReceiveEnergy;
-    }
-
-    @Override
-    public int extractEnergy(int i, boolean b) {
-        return 0;
-    }
-
-    @Override
-    public int getEnergyStored() {
-        return this.StorageEnergy;
-    }
-
-    @Override
-    public int getMaxEnergyStored() {
-        return this.MaxSendEnergy;
     }
 
     @Override
@@ -350,97 +212,86 @@ public abstract class TileEnergyCableBase extends TileEntityBase implements IEne
         return true;
     }
 
+    //消費した電力を返す。
     @Override
     public int receiveEnergy(EnumFacing enumFacing, int i, boolean b) {
-        /*if (this.facingMode.get(enumFacing) != CableConnectionMode)
-            return 0;*/
-        int ReceiveEnergy = Math.min(i, this.MaxSendEnergy - this.StorageEnergy);
-        if (!b)
-            this.StorageEnergy += ReceiveEnergy;
-        return ReceiveEnergy;
+        return 0;
+    }
+
+    //消費した電力を返す。
+    @Override
+    public int receiveEnergy(int i, boolean b) {
+        return 0;
+    }
+
+    //
+    @Override
+    public int extractEnergy(int i, boolean b) {
+        return 0;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound compound) {
-        super.readFromNBT(compound);
-        this.StorageEnergy = compound.getInteger("Energy");
-        this.EnergyReceivers = compound.getInteger("EnergyReceivers");
-        this.Tick = compound.getLong("Tick");
-        for (EnumFacing facing : EnumFacing.VALUES) {
-            this.facingMode.replace(facing, CableConnectionMode.getCableMode(compound.getInteger("CableModeIndex_" + facing.getName())));
-        }
+    public int getMaxEnergyStored(EnumFacing enumFacing) {
+        return this.MaxSendEnergy;
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
-        super.writeToNBT(compound);
-        compound.setInteger("Energy", this.StorageEnergy);
-        compound.setInteger("EnergyReceivers", this.EnergyReceivers);
-        compound.setLong("Tick", this.Tick);
-        for (EnumFacing facing : EnumFacing.VALUES) {
-            compound.setInteger("CableModeIndex_" + facing.getName(), this.facingMode.get(facing).getIndex());
-        }
-        return compound;
+    public int getMaxEnergyStored() {
+        return this.MaxSendEnergy;
     }
 
     @Override
-    public DataListManager getNetWorkData() {
-        DataListManager data = super.getNetWorkData();
-        for (EnumFacing facing : this.facingMode.keySet()) {
-            data.addData(this.renderFacingMode.get(facing).getIndex());
-        }
-        return data;
+    public int getEnergyStored(EnumFacing enumFacing) {
+        return 0;
     }
 
     @Override
-    public void ReceivePacketData(DataListManager dataListManager) {
-        super.ReceivePacketData(dataListManager);
-        for (EnumFacing facing : this.facingMode.keySet()) {
-            this.renderFacingMode.replace(facing, CableConnectionMode.getCableMode(dataListManager.getDataInt()));
-        }
+    public int getEnergyStored() {
+        return 0;
     }
 
+
+    public int getMaxSendEnergy() {
+        return this.MaxSendEnergy;
+    }
+
+    public EnergyCableManager getCableManager() {
+        return this.cableManager;
+    }
+
+    @Override
     public void ChangeFacingState(EnumFacing facing) {
-        if (this.CableConnectionFacing[facing.getIndex()] == null) {
-            CableConnectionMode mode = this.facingMode.get(facing);
-            CableConnectionMode next = CableConnectionMode.values()[(mode.getIndex() + 1) % CableConnectionMode.values().length];
-            this.facingMode.replace(facing, next);
+        CableConnectionMode now = this.facingMode.get(facing);
+        CableConnectionMode nextMode = CableConnectionMode.getCableMode((now.getIndex() + 1) % CableConnectionMode.values().length);
+        TileEntity neighbor = this.world.getTileEntity(this.getPos().offset(facing));
+        if(neighbor instanceof TileCableBase) {
+            CableConnectionMode neighborMode = ((TileCableBase)neighbor).getFacingMode().get(facing.getOpposite());
+            if(nextMode == CableConnectionMode.NORMAL) {
+                neighborMode = CableConnectionMode.NORMAL;
+            } else if(nextMode == CableConnectionMode.NORMALCLOSE) {
+                neighborMode = CableConnectionMode.CLOSE;
+                nextMode = CableConnectionMode.CLOSE;
+            } else if (nextMode == CableConnectionMode.PULL || nextMode == CableConnectionMode.PUSH) {
+                neighborMode = CableConnectionMode.CLOSE;
+                nextMode = CableConnectionMode.CLOSE;
+            }
+            ((TileCableBase)neighbor).SetFacingState(facing.getOpposite(), neighborMode);
         } else {
-            if (this.facingMode.get(facing) == CableConnectionMode.NORMAL) {
-                this.facingMode.replace(facing, CableConnectionMode.CLOSE);
-                TileEntity tile = world.getTileEntity(this.getPos().offset(facing));
-                if (tile instanceof TileEnergyCableBase) {
-                    ((TileEnergyCableBase) tile).facingMode.replace(facing.getOpposite(), CableConnectionMode.CLOSE);
+            boolean has = this.cableManager.getCableDataByIndex(this.ECM_Index).hasMachineByPos(this.getPos(), facing);
+            if(has) {
+                if(nextMode == CableConnectionMode.NORMALCLOSE) {
+                    nextMode = CableConnectionMode.CLOSE;
                 }
             } else {
-                this.facingMode.replace(facing, CableConnectionMode.NORMAL);
+                if (nextMode == CableConnectionMode.NORMAL || nextMode == CableConnectionMode.CLOSE) {
+                    nextMode = CableConnectionMode.PULL;
+                }
             }
         }
 
+        System.out.println("Change: " + nextMode.name());
+
+        this.SetFacingState(facing, nextMode);
         this.sendUpdates();
-    }
-
-    @Override
-    public EnumActionResult onSneakRightClick(EntityPlayer player, EnumFacing side, RayTraceResult rayTraceResult) {
-        if (!world.isRemote) {
-            this.invalidate();
-            world.destroyBlock(this.getPos(), true);
-        }
-        return EnumActionResult.SUCCESS;
-    }
-
-    @Override
-    public EnumActionResult onRightClick(EntityPlayer player, EnumFacing side, RayTraceResult rayTraceResult) {
-        this.ChangeFacingState(side);
-        return EnumActionResult.SUCCESS;
-    }
-
-    public boolean hasCapability(@Nonnull Capability<?> capability, EnumFacing facing) {
-        return (capability == CapabilityEnergy.ENERGY || super.hasCapability(capability, facing)) && this.facingMode.get(facing) != CableConnectionMode.CLOSE;
-    }
-
-    public <T> T getCapability(@Nonnull Capability<T> capability, EnumFacing facing) {
-        return capability == CapabilityEnergy.ENERGY && this.facingMode.get(facing) != CableConnectionMode.CLOSE ? (T) this : super.getCapability(capability, facing);
-        //return super.getCapability(capability, facing);
     }
 }

@@ -1,6 +1,6 @@
 package com.aki.advanced_industry.mods.industry.tileentities;
 
-import com.aki.advanced_industry.tile.TileEntityBase;
+import com.aki.advanced_industry.api.tile.TileEntityBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;

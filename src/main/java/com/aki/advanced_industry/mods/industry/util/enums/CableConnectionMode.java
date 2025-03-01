@@ -1,10 +1,13 @@
-package com.aki.advanced_industry.mods.industry.util;
+package com.aki.advanced_industry.mods.industry.util.enums;
 
 public enum CableConnectionMode {
+    //接続している
     NORMAL(0),
+    //接続可能(閉じている)
     PULL(1),
     PUSH(2),
-    CLOSE(3);
+    NORMALCLOSE(3),
+    CLOSE(4);
 
     int Index = 0;
     CableConnectionMode(int Index) {
@@ -24,6 +27,8 @@ public enum CableConnectionMode {
             case 2:
                 return PUSH;
             case 3:
+                return NORMALCLOSE;
+            case 4:
                 return CLOSE;
             default:
                 throw new IndexOutOfBoundsException();

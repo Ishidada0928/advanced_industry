@@ -1,18 +1,17 @@
-package com.aki.advanced_industry.tile;
+package com.aki.advanced_industry.api.tile;
 
 import cofh.redstoneflux.api.IEnergyReceiver;
 import cofh.redstoneflux.api.IEnergyStorage;
 import cofh.redstoneflux.impl.EnergyStorage;
 import com.aki.advanced_industry.AdvancedIndustryCore;
-import com.aki.advanced_industry.packet.IPacketTileData;
-import com.aki.advanced_industry.packet.IPacketTileGuiUpdate;
-import com.aki.advanced_industry.packet.PacketTileData;
-import com.aki.advanced_industry.packet.PacketTileDataRequest;
+import com.aki.advanced_industry.api.packet.IPacketTileData;
+import com.aki.advanced_industry.api.packet.IPacketTileGuiUpdate;
+import com.aki.advanced_industry.api.packet.PacketTileData;
+import com.aki.advanced_industry.api.packet.PacketTileDataRequest;
 import com.aki.mcutils.APICore.DataManage.DataListManager;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -30,7 +29,6 @@ import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.items.ItemStackHandler;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -253,7 +251,7 @@ public class TileEntityBase extends TileEntity implements ITickable, IPacketTile
     @Override
     public DataListManager getNetWorkData() {
         DataListManager dataListManager = new DataListManager();
-        dataListManager.addData(lastChangeTime = world.getTotalWorldTime());
+        dataListManager.addDataLong(this.lastChangeTime = world.getTotalWorldTime());
         return dataListManager;
     }
 
@@ -291,6 +289,7 @@ public class TileEntityBase extends TileEntity implements ITickable, IPacketTile
 
     }
 
+    //消費した電力を返す。
     @Override
     public int receiveEnergy(EnumFacing enumFacing, int i, boolean b) {
         this.sendUpdates();

@@ -3,11 +3,10 @@ package com.aki.advanced_industry.mods.industry.render.cables.fluid;
 import com.aki.advanced_industry.AdvancedIndustryCore;
 import com.aki.advanced_industry.mods.industry.render.cables.CableRendererBase;
 import com.aki.advanced_industry.mods.industry.tileentities.cables.fluid.TileFluidCableBase;
-import com.aki.advanced_industry.mods.industry.util.CableConnectionMode;
+import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.GL11;
 
 import java.util.Map;
 
@@ -20,15 +19,11 @@ public class TileRenderFluidCable extends CableRendererBase<TileFluidCableBase> 
     public void render(TileFluidCableBase te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
         super.render(te, x, y, z, partialTicks, destroyStage, alpha);
         GlStateManager.pushMatrix();
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.disableLighting();
 
         GlStateManager.translate(x + 0.5, y + 0.5, z + 0.5);
         //GlStateManager.translate(-te.getPos().getX(), -te.getPos().getY(), -te.getPos().getZ());
-
-
-        GlStateManager.shadeModel(GL11.GL_SMOOTH);
-        GlStateManager.disableAlpha();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
 
 
         for(Map.Entry<EnumFacing, CableConnectionMode> entry : te.renderFacingMode.entrySet()) {
@@ -78,9 +73,8 @@ public class TileRenderFluidCable extends CableRendererBase<TileFluidCableBase> 
             GlStateManager.popMatrix();
         }
 
-
-        GlStateManager.disableBlend();
-        GlStateManager.enableAlpha();
+        GlStateManager.disableRescaleNormal();
+        GlStateManager.enableLighting();
         GlStateManager.popMatrix();
     }
 

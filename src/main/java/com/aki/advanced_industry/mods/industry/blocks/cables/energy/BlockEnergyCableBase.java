@@ -1,19 +1,17 @@
 package com.aki.advanced_industry.mods.industry.blocks.cables.energy;
 
 import com.aki.advanced_industry.ModMaterials;
-import com.aki.advanced_industry.block.BlockBase;
-import com.aki.advanced_industry.mods.industry.tileentities.cables.energy.TileEnergyCableBase;
-import com.aki.advanced_industry.mods.industry.util.CableConnectionMode;
-import com.aki.advanced_industry.mods.industry.util.IBlockFacingBound;
+import com.aki.advanced_industry.api.block.BlockBase;
+import com.aki.advanced_industry.mods.industry.tileentities.cables.TileCableBase;
+import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
+import com.aki.advanced_industry.mods.industry.util.implement.IBlockFacingBound;
 import com.aki.advanced_industry.mods.industry.util.WrenchUtil;
 import com.google.common.collect.Lists;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -44,26 +42,10 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
     @Override
     public void onBlockAdded(World world, BlockPos pos, IBlockState state) {
         super.onBlockAdded(world, pos, state);
-        if(!world.isRemote) {
+        /*if(!world.isRemote) {
             TileEntity tile1 = world.getTileEntity(pos);
-            if(tile1 instanceof TileEnergyCableBase) {
-                TileEnergyCableBase energyCableBase1 = (TileEnergyCableBase) tile1;
-                for (Map.Entry<EnumFacing, CableConnectionMode> entry : energyCableBase1.facingMode.entrySet()) {
-                    BlockPos side_pos = pos.offset(entry.getKey());
-                    TileEntity tile2 = world.getTileEntity(side_pos);
-                    if (tile2 instanceof TileEnergyCableBase) {
-                        TileEnergyCableBase energyCableBase2 = (TileEnergyCableBase) tile2;
-                        if (energyCableBase2.facingMode.get(entry.getKey().getOpposite()) != CableConnectionMode.CLOSE) {
-                            energyCableBase1.CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
-                            energyCableBase1.facingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
-                            energyCableBase1.renderFacingMode.replace(entry.getKey(), CableConnectionMode.NORMAL);
-                            energyCableBase2.facingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
-                            energyCableBase2.renderFacingMode.replace(entry.getKey().getOpposite(), CableConnectionMode.NORMAL);
-                        }
-                    }
-                }
             }
-        }
+        }*/
     }
 
     @Override
@@ -78,7 +60,7 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
 
     @Override
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-        return true;
+        return false;
     }
 
     @Override
@@ -89,9 +71,9 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
     public void addCollisionBoxToList(IBlockState state, World worldIn, BlockPos pos, AxisAlignedBB entityBox, List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean isActualState) {
         addCollisionBoxToList(pos, entityBox, collidingBoxes, baseBox);
         TileEntity tile = worldIn.getTileEntity(pos);
-        if(tile instanceof TileEnergyCableBase) {
-            for (Map.Entry<EnumFacing, CableConnectionMode> entry : ((TileEnergyCableBase) tile).renderFacingMode.entrySet()) {
-                if(entry.getValue() != CableConnectionMode.CLOSE)
+        if(tile instanceof TileCableBase) {
+            for (Map.Entry<EnumFacing, CableConnectionMode> entry : ((TileCableBase) tile).getFacingMode().entrySet()) {
+                if(entry.getValue() != CableConnectionMode.CLOSE && entry.getValue() != CableConnectionMode.NORMALCLOSE)
                     addCollisionBoxToList(pos, entityBox, collidingBoxes, this.getFacingBoundingBox(worldIn, pos, null, false).get(entry.getKey()));
             }
         }
@@ -103,10 +85,10 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
         List<AxisAlignedBB> aabbList = new ArrayList<>(Lists.newArrayList(baseBox));
         TileEntity tile = worldIn.getTileEntity(pos);
         EntityPlayer player = worldIn.getClosestPlayer(start.x, start.y, start.z, 5.0d, false);
-        if(tile instanceof TileEnergyCableBase && player != null) {
+        if(tile instanceof TileCableBase && player != null) {
             boolean PlayerHasWrench = WrenchUtil.PlayerHasWrench(player);
-            for (Map.Entry<EnumFacing, CableConnectionMode> entry : ((TileEnergyCableBase) tile).renderFacingMode.entrySet()) {
-                if(entry.getValue() != CableConnectionMode.CLOSE || PlayerHasWrench)
+            for (Map.Entry<EnumFacing, CableConnectionMode> entry : ((TileCableBase) tile).getFacingMode().entrySet()) {
+                if((entry.getValue() != CableConnectionMode.CLOSE && entry.getValue() != CableConnectionMode.NORMALCLOSE) || PlayerHasWrench)
                     aabbList.add(getFacingBoundingBox(worldIn, pos, player, PlayerHasWrench).get(entry.getKey()));
             }
         }
@@ -136,18 +118,19 @@ public abstract class BlockEnergyCableBase extends BlockBase implements IBlockFa
     public LinkedHashMap<EnumFacing, AxisAlignedBB> getFacingBoundingBox(World world, BlockPos pos, EntityPlayer player, boolean hasWrench) {
         LinkedHashMap<EnumFacing, AxisAlignedBB> facingMap = new LinkedHashMap<>();
         TileEntity tile = world.getTileEntity(pos);
-        if(tile instanceof TileEnergyCableBase) {
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.DOWN) != CableConnectionMode.CLOSE || hasWrench)
+        if(tile instanceof TileCableBase) {
+            HashMap<EnumFacing, CableConnectionMode> facingMode = ((TileCableBase) tile).getFacingMode();
+            if ((facingMode.get(EnumFacing.DOWN) != CableConnectionMode.CLOSE && facingMode.get(EnumFacing.DOWN) != CableConnectionMode.NORMALCLOSE) || hasWrench)
                 facingMap.put(EnumFacing.DOWN, new AxisAlignedBB(0.3125F, 0.0F, 0.3125F, 0.6875F, 0.3125F, 0.6875F));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.UP) != CableConnectionMode.CLOSE || hasWrench)
+            if ((facingMode.get(EnumFacing.UP) != CableConnectionMode.CLOSE && facingMode.get(EnumFacing.UP) != CableConnectionMode.NORMALCLOSE) || hasWrench)
                 facingMap.put(EnumFacing.UP, new AxisAlignedBB(0.3125F, 0.3125F, 0.3125F, 0.6875F, 1.0F, 0.6875F));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.NORTH) != CableConnectionMode.CLOSE || hasWrench)
+            if ((facingMode.get(EnumFacing.NORTH) != CableConnectionMode.CLOSE && facingMode.get(EnumFacing.NORTH) != CableConnectionMode.NORMALCLOSE) || hasWrench)
                 facingMap.put(EnumFacing.NORTH, new AxisAlignedBB(0.3125F, 0.3125F, 0.0F, 0.6875F, 0.6875F, 0.375));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.SOUTH) != CableConnectionMode.CLOSE || hasWrench)
+            if ((facingMode.get(EnumFacing.SOUTH) != CableConnectionMode.CLOSE && facingMode.get(EnumFacing.SOUTH) != CableConnectionMode.NORMALCLOSE) || hasWrench)
                 facingMap.put(EnumFacing.SOUTH, new AxisAlignedBB(0.3125F, 0.3125F, 0.6875F, 0.6875F, 0.6875F, 1.0F));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.WEST) != CableConnectionMode.CLOSE || hasWrench)
+            if ((facingMode.get(EnumFacing.WEST) != CableConnectionMode.CLOSE && facingMode.get(EnumFacing.WEST) != CableConnectionMode.NORMALCLOSE) || hasWrench)
                 facingMap.put(EnumFacing.WEST, new AxisAlignedBB(0.0F, 0.3125F, 0.3125F, 0.3125F, 0.6875F, 0.6875F));
-            if (((TileEnergyCableBase) tile).renderFacingMode.get(EnumFacing.EAST) != CableConnectionMode.CLOSE || hasWrench)
+            if ((facingMode.get(EnumFacing.EAST) != CableConnectionMode.CLOSE && facingMode.get(EnumFacing.EAST) != CableConnectionMode.NORMALCLOSE) || hasWrench)
                 facingMap.put(EnumFacing.EAST, new AxisAlignedBB(0.6875F, 0.3125F, 0.3125F, 1.0F, 0.6875F, 0.6875F));
         }
         return facingMap;

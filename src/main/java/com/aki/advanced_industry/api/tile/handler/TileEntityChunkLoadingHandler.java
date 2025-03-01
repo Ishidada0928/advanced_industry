@@ -1,6 +1,6 @@
-package com.aki.advanced_industry.tile.handler;
+package com.aki.advanced_industry.api.tile.handler;
 
-import com.aki.advanced_industry.tile.TileEntityBase;
+import com.aki.advanced_industry.api.tile.TileEntityBase;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;

@@ -1,10 +1,10 @@
 package com.aki.advanced_industry.mods.industry.blocks.cables.fluid;
 
 import com.aki.advanced_industry.ModMaterials;
-import com.aki.advanced_industry.block.BlockBase;
+import com.aki.advanced_industry.api.block.BlockBase;
 import com.aki.advanced_industry.mods.industry.tileentities.cables.fluid.TileFluidCableBase;
-import com.aki.advanced_industry.mods.industry.util.CableConnectionMode;
-import com.aki.advanced_industry.mods.industry.util.IBlockFacingBound;
+import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
+import com.aki.advanced_industry.mods.industry.util.implement.IBlockFacingBound;
 import com.aki.advanced_industry.mods.industry.util.WrenchUtil;
 import com.google.common.collect.Lists;
 import net.minecraft.block.SoundType;
@@ -78,7 +78,7 @@ public abstract class BlockFluidCableBase extends BlockBase implements IBlockFac
 
     @Override
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-        return true;
+        return false;
     }
 
     @Override

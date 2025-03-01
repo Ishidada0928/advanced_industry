@@ -1,4 +1,4 @@
-package com.aki.advanced_industry.util;
+package com.aki.advanced_industry.api.util;
 
 import com.aki.mcutils.APICore.Utils.list.Pair;
 

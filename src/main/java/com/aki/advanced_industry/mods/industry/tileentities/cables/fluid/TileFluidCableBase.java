@@ -1,9 +1,9 @@
 package com.aki.advanced_industry.mods.industry.tileentities.cables.fluid;
 
-import com.aki.advanced_industry.mods.industry.util.CableConnectionMode;
-import com.aki.advanced_industry.mods.industry.util.IFluidCableConnector;
-import com.aki.advanced_industry.mods.industry.util.IMachineConfiguration;
-import com.aki.advanced_industry.tile.TileEntityBase;
+import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
+import com.aki.advanced_industry.mods.industry.util.implement.IFluidCableConnector;
+import com.aki.advanced_industry.mods.industry.util.implement.IMachineConfiguration;
+import com.aki.advanced_industry.api.tile.TileEntityBase;
 import com.aki.mcutils.APICore.DataManage.DataListManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
@@ -41,6 +41,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
 
     public HashSet<BlockPos> CornerLocation = new HashSet<>();
     public EnumFacing[] CableConnectionFacing = new EnumFacing[6];
+    public boolean ValidInit = false;
 
     //basic 2000
     //advanced 6000
@@ -63,7 +64,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
             if(this.StorageFluid != null && this.StorageFluid.amount <= 0)
                 this.StorageFluid = null;
             CornerLocation.clear();
-            if(Tick % 10 == 0) {
+            if(Tick % 5 == 0 || ValidInit) {
                 this.FluidReceivers = 0;
                 for (Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
                     CableConnectionFacing[entry.getKey().getIndex()] = null;
@@ -98,6 +99,7 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
                             break;
                     }
                 }
+                this.ValidInit = false;
             }
 
             CornerLocation.clear();
@@ -159,6 +161,8 @@ public abstract class TileFluidCableBase extends TileEntityBase implements IFlui
     @Override
     public void validate() {
         super.validate();
+        if(!this.world.isRemote)
+            this.ValidInit = true;
     }
 
     private void AddFluidStack(FluidStack stack, int add) {

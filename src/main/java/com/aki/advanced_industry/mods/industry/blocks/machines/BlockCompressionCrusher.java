@@ -2,13 +2,12 @@ package com.aki.advanced_industry.mods.industry.blocks.machines;
 
 import com.aki.advanced_industry.AdvancedIndustryCore;
 import com.aki.advanced_industry.ModMaterials;
-import com.aki.advanced_industry.block.BlockBase;
-import com.aki.advanced_industry.mods.industry.tileentities.machines.TileCompressionCrusher;
+import com.aki.advanced_industry.api.block.BlockBase;
+import com.aki.advanced_industry.mods.industry.tileentities.misc.TileCompressionCrusher;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
@@ -35,7 +34,7 @@ public class BlockCompressionCrusher extends BlockBase {
         if(!worldIn.isRemote) {
             if(tile instanceof TileCompressionCrusher) {
                 TileCompressionCrusher crusher = (TileCompressionCrusher) tile;
-                if(((TileCompressionCrusher) tile).IsItemStackEmpty(crusher.InStack)) {
+                if(((TileCompressionCrusher) tile).IsItemStackEmpty(crusher.Inventory.getStackInSlot(0))) {
                     if (!playerIn.inventory.getCurrentItem().isEmpty()) {
                         crusher.InputStack(playerIn.inventory.getCurrentItem());
                     }

@@ -1,4 +1,4 @@
-package com.aki.advanced_industry.mods.industry.util;
+package com.aki.advanced_industry.mods.industry.util.implement;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
