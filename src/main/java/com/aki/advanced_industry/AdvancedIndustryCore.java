@@ -99,6 +99,7 @@ public class AdvancedIndustryCore {
     @Mod.EventHandler
     public void preinit(FMLPreInitializationEvent event) {
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(new AdvancedIndustryEvents());
 
         /**
          * renderの初めに必ず読み込む
@@ -190,45 +191,6 @@ public class AdvancedIndustryCore {
             WrenchUtil.AddWrench((item) -> item instanceof ItemWrench_Neptune);
         if(Loader.isModLoaded("cofhcore"))
             WrenchUtil.AddWrench((item) -> item instanceof IToolHammer);
-    }
-
-    @SubscribeEvent
-    public void OnRightClickEvent(PlayerInteractEvent.RightClickBlock rightClickBlock) {
-        EntityPlayer playerIn = rightClickBlock.getEntityPlayer();
-        World worldIn = rightClickBlock.getWorld();
-        EnumHand handIn = rightClickBlock.getHand();
-        BlockPos pos = rightClickBlock.getPos();
-        if(!playerIn.isSpectator() && WrenchUtil.PlayerHasWrench(playerIn)) {
-            ItemStack stack = playerIn.getHeldItem(handIn);
-            if(!stack.isEmpty() && !worldIn.isRemote) {
-                TileEntity tile = worldIn.getTileEntity(pos);
-                Pair<Vec3d, Vec3d> pair = RaytraceUtil.getRayTraceVectors(playerIn);
-                RayTraceResult rayTraceResult = worldIn.rayTraceBlocks(pair.getKey(), pair.getValue());
-                EnumFacing facing = rightClickBlock.getFace();
-                Block block = worldIn.getBlockState(pos).getBlock();
-                if(block instanceof IBlockFacingBound) {
-                    if(rayTraceResult != null) {
-                        double dist = Double.POSITIVE_INFINITY;
-                        Pair<Vec3d, Vec3d> vecs = RaytraceUtil.getRayTraceVectors(playerIn);
-                        for (Map.Entry<EnumFacing, AxisAlignedBB> entry : ((IBlockFacingBound) block).getFacingBoundingBox(worldIn, pos, playerIn, WrenchUtil.PlayerHasWrench(playerIn)).entrySet()) {
-                            RayTraceResult result = entry.getValue().offset(pos).calculateIntercept(vecs.getKey(), vecs.getValue());
-                            if (result != null && dist > result.hitVec.distanceTo(vecs.getKey())) {
-                                dist = result.hitVec.distanceTo(vecs.getKey());
-                                facing = entry.getKey();
-                                rayTraceResult = result;
-                            }
-                        }
-                    }
-                }
-                if(tile instanceof IMachineConfiguration && rayTraceResult != null) {
-                    if(playerIn.isSneaking()) {
-                        rightClickBlock.setCancellationResult(((IMachineConfiguration) tile).onSneakRightClick(playerIn, facing, rayTraceResult));
-                    } else {
-                        rightClickBlock.setCancellationResult(((IMachineConfiguration) tile).onRightClick(playerIn, facing, rayTraceResult));
-                    }
-                }
-            }
-        }
     }
 
     @SubscribeEvent
