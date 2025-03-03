@@ -12,6 +12,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.energy.CapabilityEnergy;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /*
@@ -77,10 +78,10 @@ public class EnergyCableManager {
                     int needByNetwork = Math.min(srcCable.getMaxSendEnergyByIndex(destCable.getIndex()), destCable.NeedEnergyAsCable());
                     int need = Math.min(Provide * (needByNetwork / AllNeedEnergy), Math.min(srcCable.getMaxSendEnergyByIndex(destCable.getIndex()), destCable.NeedEnergyAsCable()));//割合で分配(必要なところほど多く供給)
                     if(need > 0) {
-                        int storage = srcCable.ProvideEnergy(world, need);
-                        storage -= destCable.ReceiveEnergy(world, storage);
+                        int storage = srcCable.ProvideEnergy(world, need, false);
+                        storage -= destCable.ReceiveEnergy(world, storage, false);
                         if (storage > 0) {//実行されないはず...
-                            srcCable.ReceiveEnergy(world, storage);
+                            srcCable.ReceiveEnergy(world, storage, false);
                         }
                     }
                 }
@@ -88,8 +89,39 @@ public class EnergyCableManager {
         }
     }
 
+    public int ProvideEnergy(World world, CableData srcCable, int Provide, boolean simulation) {
+        if(srcCable != null) {
+            int AllNeedEnergy = 0;
+            for (CableData destCable : this.cableDataList) {
+                AllNeedEnergy += Math.min(srcCable.getMaxSendEnergyByIndex(destCable.getIndex()), destCable.NeedEnergyAsCable());
+            }
+
+            Provide = Math.min(srcCable.getMaxSendEnergy(), Provide);
+            int first = Provide;
+
+            if (AllNeedEnergy > 0) {
+                for (CableData destCable : this.cableDataList) {
+                    int needByNetwork = Math.min(srcCable.getMaxSendEnergyByIndex(destCable.getIndex()), destCable.NeedEnergyAsCable());
+                    int need = Math.min(Provide * (needByNetwork / AllNeedEnergy), Math.min(srcCable.getMaxSendEnergyByIndex(destCable.getIndex()), destCable.NeedEnergyAsCable()));//割合で分配(必要なところほど多く供給)
+                    if (need > 0) {
+                        Provide -= destCable.ReceiveEnergy(world, Provide, simulation);
+                        if (Provide <= 0) {
+                            return first;
+                        }
+                    }
+                }
+            }
+
+            return first - Provide;
+        }
+        return 0;
+    }
+
+    @Nullable
     public CableData getCableDataByIndex(int index) {
-        return this.cableDataList.get(index);
+        if(!this.cableDataList.isEmpty())
+            return this.cableDataList.get(index);
+        return null;
     }
 
     public void SeparateNetworks() {
@@ -262,6 +294,30 @@ public class EnergyCableManager {
             return false;
         }
 
+        @Nullable
+        public EnergyImplementType getEnergyImplementTypeByPos(BlockPos CablePos, EnumFacing facing) {
+            BlockPos tilePos = CablePos.offset(facing);
+            Set<Pair<EnumFacing, EnergyImplementType>> set = this.MachineReceiverPos.get(tilePos);
+            if(set != null) {
+                for(Pair<EnumFacing, EnergyImplementType> pair : set) {
+                    if(pair.getKey() == facing.getOpposite()) {
+                        return pair.getValue();
+                    }
+                }
+            }
+
+            set = this.MachineProviderPos.get(tilePos);
+            if(set != null) {
+                for(Pair<EnumFacing, EnergyImplementType> pair : set) {
+                    if(pair.getKey() == facing.getOpposite()) {
+                        return pair.getValue();
+                    }
+                }
+            }
+
+            return null;
+        }
+
         public void IncreaseNeedEnergy(int needReceiveEnergy) {
             this.NeedReceiveEnergy += needReceiveEnergy;
         }
@@ -282,7 +338,7 @@ public class EnergyCableManager {
 
         //このケーブルのネットワークが受け取ったエネルギー
         //マシンに供給
-        public int ReceiveEnergy(World world, int receiveEnergy) {
+        public int ReceiveEnergy(World world, int receiveEnergy, boolean simulation) {
             int prev = 0;
             int receive = Math.min(this.MaxSendEnergy, receiveEnergy);
             int first = receive;
@@ -297,7 +353,7 @@ public class EnergyCableManager {
                 int receivers = this.MachineReceiverPos.size();
                 if(receive >= receivers) {//割ったときに >= 1.0
                     int provide = Math.floorDiv(receive, receivers);
-                    for(Map.Entry<BlockPos, Set<Pair<EnumFacing, EnergyImplementType>>> entry : (new HashMap<>(this.MachineReceiverPos)).entrySet()) {
+                    for(Map.Entry<BlockPos, Set<Pair<EnumFacing, EnergyImplementType>>> entry : (simulation ? new HashMap<>(this.MachineReceiverPos) : this.MachineReceiverPos).entrySet()) {
                         TileEntity tile = world.getTileEntity(entry.getKey());
                         Iterator<Pair<EnumFacing, EnergyImplementType>> iter = entry.getValue().iterator();
                         if(tile != null) {
@@ -308,37 +364,38 @@ public class EnergyCableManager {
                                     case RFIENERGYSTORAGE:
                                         if (tile instanceof IEnergyStorage) {
                                             IEnergyStorage storage = ((IEnergyStorage) tile);
-                                            receive -= storage.receiveEnergy(provide, false);
+                                            receive -= storage.receiveEnergy(provide, simulation);
                                             if (storage.getMaxEnergyStored() == storage.getEnergyStored()) {
                                                 iter.remove();
                                             }
                                         }
                                         break;
+                                    case FORGEIENERGYSTORAGEEXTRACT:
                                     case RFIENERGYPROVIDER:
                                         break;
                                     case RFIENERGYRECEIVER:
                                         if (tile instanceof IEnergyReceiver) {
                                             IEnergyReceiver receiver = ((IEnergyReceiver) tile);
-                                            receive -= receiver.receiveEnergy(facing, provide, false);
+                                            receive -= receiver.receiveEnergy(facing, provide, simulation);
                                             if (receiver.getMaxEnergyStored(facing) == receiver.getEnergyStored(facing)) {
                                                 iter.remove();
                                             }
                                         }
                                         break;
-                                    case FORGEIENERGYSTORAGE:
-                                        if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                            net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
-                                            receive -= storage.receiveEnergy(provide, false);
-                                            if (storage.getMaxEnergyStored() == storage.getEnergyStored()) {
-                                                iter.remove();
-                                            }
-                                        } else if (tile.hasCapability(CapabilityEnergy.ENERGY, facing)) {
+                                    case FORGEIENERGYSTORAGERECEIVE:
+                                        if (tile.hasCapability(CapabilityEnergy.ENERGY, facing)) {
                                             net.minecraftforge.energy.IEnergyStorage storage = tile.getCapability(CapabilityEnergy.ENERGY, facing);
                                             if (storage != null) {
-                                                receive -= storage.receiveEnergy(provide, false);
+                                                receive -= storage.receiveEnergy(provide, simulation);
                                                 if (storage.getMaxEnergyStored() == storage.getEnergyStored()) {
                                                     iter.remove();
                                                 }
+                                            }
+                                        } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
+                                            net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
+                                            receive -= storage.receiveEnergy(provide, simulation);
+                                            if (storage.getMaxEnergyStored() == storage.getEnergyStored()) {
+                                                iter.remove();
                                             }
                                         }
                                         break;
@@ -347,7 +404,7 @@ public class EnergyCableManager {
                         }
                     }
                 } else {//割ったときに < 1.0
-                    for(Map.Entry<BlockPos, Set<Pair<EnumFacing, EnergyImplementType>>> entry : (new HashMap<>(this.MachineReceiverPos)).entrySet()) {
+                    for(Map.Entry<BlockPos, Set<Pair<EnumFacing, EnergyImplementType>>> entry : (simulation ? new HashMap<>(this.MachineReceiverPos) : this.MachineReceiverPos).entrySet()) {
                         TileEntity tile = world.getTileEntity(entry.getKey());
                         Iterator<Pair<EnumFacing, EnergyImplementType>> iter = entry.getValue().iterator();
                         if (tile != null) {
@@ -358,37 +415,38 @@ public class EnergyCableManager {
                                     case RFIENERGYSTORAGE:
                                         if (tile instanceof IEnergyStorage) {
                                             IEnergyStorage storage = ((IEnergyStorage) tile);
-                                            receive -= storage.receiveEnergy(receive, false);
+                                            receive -= storage.receiveEnergy(receive, simulation);
                                             if (storage.getMaxEnergyStored() == storage.getEnergyStored()) {
                                                 iter.remove();
                                             }
                                         }
                                         break;
+                                    case FORGEIENERGYSTORAGEEXTRACT:
                                     case RFIENERGYPROVIDER:
                                         break;
                                     case RFIENERGYRECEIVER:
                                         if (tile instanceof IEnergyReceiver) {
                                             IEnergyReceiver receiver = ((IEnergyReceiver) tile);
-                                            receive -= receiver.receiveEnergy(facing, receive, false);
+                                            receive -= receiver.receiveEnergy(facing, receive, simulation);
                                             if (receiver.getMaxEnergyStored(facing) == receiver.getEnergyStored(facing)) {
                                                 iter.remove();
                                             }
                                         }
                                         break;
-                                    case FORGEIENERGYSTORAGE:
-                                        if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                            net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
-                                            receive -= storage.receiveEnergy(receive, false);
-                                            if (storage.getMaxEnergyStored() == storage.getEnergyStored()) {
-                                                iter.remove();
-                                            }
-                                        } else if (tile.hasCapability(CapabilityEnergy.ENERGY, facing)) {
+                                    case FORGEIENERGYSTORAGERECEIVE:
+                                        if (tile.hasCapability(CapabilityEnergy.ENERGY, facing)) {
                                             net.minecraftforge.energy.IEnergyStorage storage = tile.getCapability(CapabilityEnergy.ENERGY, facing);
                                             if (storage != null) {
-                                                receive -= storage.receiveEnergy(receive, false);
+                                                receive -= storage.receiveEnergy(receive, simulation);
                                                 if (storage.getMaxEnergyStored() == storage.getEnergyStored()) {
                                                     iter.remove();
                                                 }
+                                            }
+                                        } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
+                                            net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
+                                            receive -= storage.receiveEnergy(receive, simulation);
+                                            if (storage.getMaxEnergyStored() == storage.getEnergyStored()) {
+                                                iter.remove();
                                             }
                                         }
                                         break;
@@ -408,7 +466,7 @@ public class EnergyCableManager {
 
         //このケーブルのネットワークが送電するエネルギー
         //マシンから取得
-        public int ProvideEnergy(World world, int provideEnergy) {
+        public int ProvideEnergy(World world, int provideEnergy, boolean simulation) {
             int sum = 0;
             int prev = -1;
             int provide = Math.min(provideEnergy, this.MaxSendEnergy);
@@ -423,7 +481,7 @@ public class EnergyCableManager {
                 int providers = this.MachineProviderPos.size();
                 if(provide >= providers) {
                     int receive = Math.floorDiv(provide, providers);
-                    for(Map.Entry<BlockPos, Set<Pair<EnumFacing, EnergyImplementType>>> entry : (new HashMap<>(this.MachineProviderPos)).entrySet()) {
+                    for(Map.Entry<BlockPos, Set<Pair<EnumFacing, EnergyImplementType>>> entry : (simulation ? new HashMap<>(this.MachineProviderPos) : this.MachineProviderPos).entrySet()) {
                         TileEntity tile = world.getTileEntity(entry.getKey());
                         Iterator<Pair<EnumFacing, EnergyImplementType>> iter = entry.getValue().iterator();
                         if (tile != null) {
@@ -434,7 +492,7 @@ public class EnergyCableManager {
                                     case RFIENERGYSTORAGE:
                                         if (tile instanceof IEnergyStorage) {
                                             IEnergyStorage storage = ((IEnergyStorage) tile);
-                                            sum += storage.extractEnergy(receive, false);
+                                            sum += storage.extractEnergy(receive, simulation);
                                             if (storage.getEnergyStored() == 0) {
                                                 iter.remove();
                                             }
@@ -443,28 +501,29 @@ public class EnergyCableManager {
                                     case RFIENERGYPROVIDER:
                                         if (tile instanceof IEnergyProvider) {
                                             IEnergyProvider provider = ((IEnergyProvider) tile);
-                                            sum += provider.extractEnergy(facing, receive, false);
+                                            sum += provider.extractEnergy(facing, receive, simulation);
                                             if (provider.getEnergyStored(facing) == 0) {
                                                 iter.remove();
                                             }
                                         }
                                         break;
+                                    case FORGEIENERGYSTORAGERECEIVE:
                                     case RFIENERGYRECEIVER:
                                         break;
-                                    case FORGEIENERGYSTORAGE:
-                                        if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                            net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
-                                            sum += storage.extractEnergy(receive, false);
-                                            if (storage.getEnergyStored() == 0) {
-                                                iter.remove();
-                                            }
-                                        } else if (tile.hasCapability(CapabilityEnergy.ENERGY, facing)) {
+                                    case FORGEIENERGYSTORAGEEXTRACT:
+                                        if (tile.hasCapability(CapabilityEnergy.ENERGY, facing)) {
                                             net.minecraftforge.energy.IEnergyStorage storage = tile.getCapability(CapabilityEnergy.ENERGY, facing);
                                             if(storage != null) {
-                                                sum += storage.extractEnergy(receive, false);
+                                                sum += storage.extractEnergy(receive, simulation);
                                                 if (storage.getEnergyStored() == 0) {
                                                     iter.remove();
                                                 }
+                                            }
+                                        } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
+                                            net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
+                                            sum += storage.extractEnergy(receive, simulation);
+                                            if (storage.getEnergyStored() == 0) {
+                                                iter.remove();
                                             }
                                         }
                                         break;
@@ -473,7 +532,7 @@ public class EnergyCableManager {
                         }
                     }
                 } else {
-                    for (Map.Entry<BlockPos, Set<Pair<EnumFacing, EnergyImplementType>>> entry : (new HashMap<>(this.MachineProviderPos)).entrySet()) {
+                    for (Map.Entry<BlockPos, Set<Pair<EnumFacing, EnergyImplementType>>> entry : (simulation ? new HashMap<>(this.MachineProviderPos) : this.MachineProviderPos).entrySet()) {
                         TileEntity tile = world.getTileEntity(entry.getKey());
                         Iterator<Pair<EnumFacing, EnergyImplementType>> iter = entry.getValue().iterator();
                         if(tile != null) {
@@ -484,7 +543,7 @@ public class EnergyCableManager {
                                     case RFIENERGYSTORAGE:
                                         if (tile instanceof IEnergyStorage) {
                                             IEnergyStorage storage = ((IEnergyStorage) tile);
-                                            sum += storage.extractEnergy(provide, false);
+                                            sum += storage.extractEnergy(provide, simulation);
                                             if (storage.getEnergyStored() == 0) {
                                                 iter.remove();
                                             }
@@ -493,28 +552,30 @@ public class EnergyCableManager {
                                     case RFIENERGYPROVIDER:
                                         if (tile instanceof IEnergyProvider) {
                                             IEnergyProvider provider = ((IEnergyProvider) tile);
-                                            sum += provider.extractEnergy(facing, provide, false);
+                                            sum += provider.extractEnergy(facing, provide, simulation);
                                             if (provider.getEnergyStored(facing) == 0) {
                                                 iter.remove();
                                             }
                                         }
                                         break;
+                                    case FORGEIENERGYSTORAGERECEIVE:
                                     case RFIENERGYRECEIVER:
                                         break;
-                                    case FORGEIENERGYSTORAGE:
-                                        if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
-                                            net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
-                                            sum += storage.extractEnergy(provide, false);
-                                            if (storage.getEnergyStored() == 0) {
-                                                iter.remove();
-                                            }
-                                        } else if (tile.hasCapability(CapabilityEnergy.ENERGY, facing)) {
+                                    case FORGEIENERGYSTORAGEEXTRACT:
+                                        if (tile.hasCapability(CapabilityEnergy.ENERGY, facing)) {
                                             net.minecraftforge.energy.IEnergyStorage storage = tile.getCapability(CapabilityEnergy.ENERGY, facing);
                                             if (storage != null) {
-                                                sum += storage.extractEnergy(provide, false);
+                                                System.out.println("Provide2");
+                                                sum += storage.extractEnergy(provide, simulation);
                                                 if (storage.getEnergyStored() == 0) {
                                                     iter.remove();
                                                 }
+                                            }
+                                        } else if (tile instanceof net.minecraftforge.energy.IEnergyStorage) {
+                                            net.minecraftforge.energy.IEnergyStorage storage = ((net.minecraftforge.energy.IEnergyStorage) tile);
+                                            sum += storage.extractEnergy(provide, simulation);
+                                            if (storage.getEnergyStored() == 0) {
+                                                iter.remove();
                                             }
                                         }
                                         break;

@@ -1,5 +1,6 @@
 package com.aki.advanced_industry.mods.industry.tileentities.cables.fluid;
 
+import com.aki.advanced_industry.mods.industry.tileentities.cables.TileCableBase;
 import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
 import com.aki.advanced_industry.mods.industry.util.implement.IFluidCableConnector;
 import com.aki.advanced_industry.mods.industry.util.implement.IMachineConfiguration;
@@ -28,7 +29,7 @@ import java.util.Map;
 /**
  * 液体はテレポートで運ぶ (材料にエンダーパールを使うといいかも 1個で16できるみたいな)
  * */
-public abstract class TileFluidCableBase extends TileEntityBase implements IFluidCableConnector, IMachineConfiguration, IFluidHandler {
+public abstract class TileFluidCableBase extends TileCableBase implements IFluidCableConnector, IMachineConfiguration, IFluidHandler {
     public int MaxSendFluid;
     public int FluidReceivers = 0;
     public HashMap<EnumFacing, CableConnectionMode> facingMode = new HashMap<>();

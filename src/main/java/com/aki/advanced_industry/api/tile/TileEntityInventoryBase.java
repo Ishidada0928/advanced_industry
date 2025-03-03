@@ -2,15 +2,17 @@ package com.aki.advanced_industry.api.tile;
 
 import com.aki.mcutils.APICore.DataManage.DataListManager;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 
 public abstract class TileEntityInventoryBase extends TileEntityBase {
     public ItemStackHandler Inventory;
     public TileEntityInventoryBase(ItemStackHandler handler) {
-        super(0);
+        super();
         if(handler == null)
             throw new NullPointerException();
         this.Inventory = handler;
+        this.addCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, (facing) -> TileEntityInventoryBase.this.Inventory);
     }
 
     public TileEntityInventoryBase(int maxEnergyStored, ItemStackHandler handler) {
@@ -44,19 +46,5 @@ public abstract class TileEntityInventoryBase extends TileEntityBase {
     public void ReceivePacketData(DataListManager dataListManager) {
         this.lastChangeTime = dataListManager.getDataLong();
         this.Inventory.deserializeNBT(dataListManager.getDataTag());
-    }
-
-    @Override
-    public <T> T getCapability(net.minecraftforge.common.capabilities.Capability<T> capability, @javax.annotation.Nullable net.minecraft.util.EnumFacing facing)
-    {
-        if (capability == net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
-            return (T) (this.Inventory);
-        return super.getCapability(capability, facing);
-    }
-
-    @Override
-    public boolean hasCapability(net.minecraftforge.common.capabilities.Capability<?> capability, @javax.annotation.Nullable net.minecraft.util.EnumFacing facing)
-    {
-        return capability == net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY || super.hasCapability(capability, facing);
     }
 }

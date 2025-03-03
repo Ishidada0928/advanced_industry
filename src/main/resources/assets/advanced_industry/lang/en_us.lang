@@ -42,5 +42,5 @@ item.wrench.name=Wrench
 tooltip.wrench.info=It is just a wrench. (Not compatible with other mods).
 tooltip.energy_pipe1.info=Maximum transmission energy (%d RF/tick)
 tooltip.energy_pipe2.info=Energy transmitted per tick divided by the number of devices connected.
-tooltip.fluid_pipe1.info=Maximum infusion volume (%d MB/tick)
+tooltip.fluid_pipe1.info=Maximum infusion volume/Capacity (%d MB/tick)
 tooltip.fluid_pipe2.info=Infusion per tick of liquid divided by the number of equipment connections.

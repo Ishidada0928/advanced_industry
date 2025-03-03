@@ -43,5 +43,5 @@ item.wrench.name=レンチ
 tooltip.wrench.info=ただのレンチです。（ほかのmodと互換性がありません。）
 tooltip.energy_pipe1.info=最大伝送エネルギー(%d RF/tick)
 tooltip.energy_pipe2.info=エネルギーを機器の接続数で割った数1tickあたり伝送します。
-tooltip.fluid_pipe1.info=最大輸液量(%d MB/tick)
+tooltip.fluid_pipe1.info=最大輸液量/容量(%d MB/tick)
 tooltip.fluid_pipe2.info=液体を機器の接続数で割った数1tickあたり輸液します。

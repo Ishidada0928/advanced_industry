@@ -22,6 +22,7 @@ public abstract class TileCableBase extends TileEntityBase implements IMachineCo
     public int ECM_Index = -1;
 
     public TileCableBase() {
+        super(0);
         for(EnumFacing facing : EnumFacing.VALUES) {
             this.facingMode.put(facing, CableConnectionMode.NORMALCLOSE);
         }

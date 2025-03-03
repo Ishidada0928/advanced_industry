@@ -27,15 +27,20 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.ForgeChunkManager;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.function.Function;
 
-public class TileEntityBase extends TileEntity implements ITickable, IPacketTileData, IPacketTileGuiUpdate, IEnergyStorage, IEnergyReceiver {
+public class TileEntityBase extends TileEntity implements ITickable, IPacketTileData, IPacketTileGuiUpdate, IEnergyStorage, net.minecraftforge.energy.IEnergyStorage, IEnergyReceiver {
     public long lastChangeTime = 0;
 
     /**
@@ -48,12 +53,33 @@ public class TileEntityBase extends TileEntity implements ITickable, IPacketTile
 
     public EnergyStorage energyStorage = new EnergyStorage(0);
 
+    private final HashMap<Capability<?>, Function<EnumFacing, Object>> capabilities = new HashMap<>();
+
     public TileEntityBase() {
 
     }
 
     public TileEntityBase(int MaxEnergyStorage) {
+        super();
         energyStorage = new EnergyStorage(MaxEnergyStorage);
+        this.addCapability(CapabilityEnergy.ENERGY, (facing) -> this);
+    }
+
+    public void addCapability(net.minecraftforge.common.capabilities.Capability<?> capability, Function<EnumFacing, Object> function) {
+        this.capabilities.put(capability, function);
+    }
+
+    @Override
+    public <T> T getCapability(net.minecraftforge.common.capabilities.Capability<T> capability, @javax.annotation.Nullable net.minecraft.util.EnumFacing facing)
+    {
+        Function<EnumFacing, Object> function = this.capabilities.get(capability);
+        return function != null ? (T) function.apply(facing) : super.getCapability(capability, facing);
+    }
+
+    @Override
+    public boolean hasCapability(net.minecraftforge.common.capabilities.Capability<?> capability, @javax.annotation.Nullable net.minecraft.util.EnumFacing facing)
+    {
+        return this.capabilities.containsKey(capability) || super.hasCapability(capability, facing);
     }
 
     public void sendUpdates() {
@@ -298,7 +324,6 @@ public class TileEntityBase extends TileEntity implements ITickable, IPacketTile
 
     @Override
     public int getEnergyStored(EnumFacing enumFacing) {
-
         return energyStorage.getEnergyStored();
     }
 
@@ -332,6 +357,17 @@ public class TileEntityBase extends TileEntity implements ITickable, IPacketTile
     public int getMaxEnergyStored() {
         return energyStorage.getMaxEnergyStored();
     }
+
+    @Override
+    public boolean canExtract() {
+        return false;
+    }
+
+    @Override
+    public boolean canReceive() {
+        return false;
+    }
+
 
     //trueにするとguiにプレイヤーインベントリを表示
     public boolean HasPlayerInventory() {
