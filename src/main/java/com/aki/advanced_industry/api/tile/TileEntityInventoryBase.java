@@ -20,6 +20,7 @@ public abstract class TileEntityInventoryBase extends TileEntityBase {
         if(handler == null)
             throw new NullPointerException();
         this.Inventory = handler;
+        this.addCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, (facing) -> TileEntityInventoryBase.this.Inventory);
     }
 
     @Override

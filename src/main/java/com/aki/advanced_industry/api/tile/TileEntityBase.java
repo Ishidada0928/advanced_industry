@@ -35,7 +35,6 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
@@ -62,7 +61,9 @@ public class TileEntityBase extends TileEntity implements ITickable, IPacketTile
     public TileEntityBase(int MaxEnergyStorage) {
         super();
         energyStorage = new EnergyStorage(MaxEnergyStorage);
-        this.addCapability(CapabilityEnergy.ENERGY, (facing) -> this);
+        if(MaxEnergyStorage > 0) {
+            this.addCapability(CapabilityEnergy.ENERGY, (facing) -> this);
+        }
     }
 
     public void addCapability(net.minecraftforge.common.capabilities.Capability<?> capability, Function<EnumFacing, Object> function) {

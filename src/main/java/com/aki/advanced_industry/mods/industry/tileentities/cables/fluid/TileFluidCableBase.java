@@ -2,357 +2,227 @@ package com.aki.advanced_industry.mods.industry.tileentities.cables.fluid;
 
 import com.aki.advanced_industry.mods.industry.tileentities.cables.TileCableBase;
 import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
-import com.aki.advanced_industry.mods.industry.util.implement.IFluidCableConnector;
 import com.aki.advanced_industry.mods.industry.util.implement.IMachineConfiguration;
-import com.aki.advanced_industry.api.tile.TileEntityBase;
+import com.aki.advanced_industry.mods.industry.util.network.cable.FluidCableManager;
 import com.aki.mcutils.APICore.DataManage.DataListManager;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.FluidTankProperties;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidTankProperties;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 
 /**
  * 液体はテレポートで運ぶ (材料にエンダーパールを使うといいかも 1個で16できるみたいな)
+ * このパイプで同時に運べる液体は一種類だけ。
+ * ネットワーク全体でタンクの機能を持たせる(容量：それぞれのMaxSendFluidの和)。
+ * -> 基本はそれぞれのパイプに平等に分配(それぞれのMaxSendFluidを考慮する)。
+ *    パイプ内の液体の明るさを反映する。/
+ * 液体はパイプの中心を通るようにする。
+ * NORMALは Extract はしない
  * */
-public abstract class TileFluidCableBase extends TileCableBase implements IFluidCableConnector, IMachineConfiguration, IFluidHandler {
-    public int MaxSendFluid;
-    public int FluidReceivers = 0;
-    public HashMap<EnumFacing, CableConnectionMode> facingMode = new HashMap<>();
+public class TileFluidCableBase extends TileCableBase implements IMachineConfiguration, IFluidHandler {
+    private final int MaxSendFluid;
+    private FluidCableManager cableManager;
+    private FluidStack fluidStack = null;
 
-    //
-    public HashMap<EnumFacing, CableConnectionMode> renderFacingMode = new HashMap<>();
-    public FluidStack StorageFluid = null;
-    public int SendFluidBase = 0;
-    public long Tick = 0;
-
-    public HashSet<BlockPos> CornerLocation = new HashSet<>();
-    public EnumFacing[] CableConnectionFacing = new EnumFacing[6];
-    public boolean ValidInit = false;
-
-    //basic 2000
-    //advanced 6000
-    //extreme 18000
-    //ultimate 144000
-    public TileFluidCableBase(int maxFluid) {
-        this.MaxSendFluid = maxFluid;
-        for(EnumFacing facing : EnumFacing.VALUES) {
-            facingMode.put(facing, CableConnectionMode.NORMAL);
-            renderFacingMode.put(facing, CableConnectionMode.CLOSE);
-        }
+    public TileFluidCableBase(int maxSendFluid) {
+        super();
+        this.MaxSendFluid = maxSendFluid;
+        this.cableManager = new FluidCableManager(this);
+        this.addCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, (facing) -> this);
     }
 
     @Override
     public void update() {
         super.update();
-        if(!world.isRemote) {
-            Tick++;
-            boolean will_update = false;
-            if(this.StorageFluid != null && this.StorageFluid.amount <= 0)
-                this.StorageFluid = null;
-            CornerLocation.clear();
-            if(Tick % 5 == 0 || ValidInit) {
-                this.FluidReceivers = 0;
-                for (Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
-                    CableConnectionFacing[entry.getKey().getIndex()] = null;
-                    renderFacingMode.replace(entry.getKey(), entry.getValue());
-                    TileEntity tile = world.getTileEntity(this.getPos().add(entry.getKey().getDirectionVec()));
-                    EnumFacing facing = entry.getKey();
-                    switch (entry.getValue()) {
-                        case NORMAL:
-                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
-                                this.FluidReceivers++;
-                                will_update = true;
-                            }
-                            if (tile instanceof TileFluidCableBase && ((TileFluidCableBase) tile).facingMode.get(facing) != CableConnectionMode.CLOSE) {
-                                this.CornerLocation.add(this.pos);
-                                CableConnectionFacing[entry.getKey().getIndex()] = entry.getKey();
-                                ((TileFluidCableBase) tile).facingMode.replace(facing.getOpposite(), CableConnectionMode.NORMAL);
-                                if(this.StorageFluid != null && this.StorageFluid.amount > 0)
-                                    ((TileFluidCableBase) tile).FluidReceiverCountCheck(this.getPos(), this.Tick);
-                                will_update = true;
-                            }
-                            if(!(tile instanceof TileFluidCableBase || tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()))) {
-                                renderFacingMode.replace(entry.getKey(), CableConnectionMode.CLOSE);
-                                will_update = true;
-                            }
-                            break;
-                        case PUSH:
-                        case PULL:
-                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
-                                this.FluidReceivers++;
-                                will_update = true;
-                            }
-                            break;
+        if(!this.world.isRemote) {
+            //初期化
+            if(this.Tick < 0) {
+                for(EnumFacing facing : EnumFacing.VALUES) {
+                    TileEntity tile = this.world.getTileEntity(this.getPos().offset(facing));
+                    if(tile instanceof TileFluidCableBase) {
+                        TileFluidCableBase cableBase = (TileFluidCableBase) tile;
+                        cableBase.SetFacingState(facing.getOpposite(), CableConnectionMode.NORMAL);
+                        this.facingMode.put(facing, CableConnectionMode.NORMAL);
                     }
                 }
-                this.ValidInit = false;
-            }
-
-            CornerLocation.clear();
-
-            if(this.FluidReceivers > 0) {
-                for (Map.Entry<EnumFacing, CableConnectionMode> entry : facingMode.entrySet()) {
-                    TileEntity tile = world.getTileEntity(this.getPos().add(entry.getKey().getDirectionVec()));
-                    EnumFacing facing = entry.getKey();
-                    if(this.StorageFluid != null) {
-                        this.SendFluidBase = this.StorageFluid.amount;
-                    }
-                    switch (entry.getValue()) {
-                        case NORMAL:
-                            if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()) && this.StorageFluid != null && this.StorageFluid.amount > 0) {
-                                AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(this.StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(MaxSendFluid, SendFluidBase), this.FluidReceivers)), true));
-                                will_update = true;
-                            }
-                            /*if(this.StorageFluid == null || this.StorageFluid.amount <= this.MaxSendFluid) {
-                                if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
-                                    FluidStack stack = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).drain(MaxSendFluid - (StorageFluid != null ? StorageFluid.amount : 0), true);
-                                    if(stack != null && (this.StorageFluid == null || this.StorageFluid.getFluid() == stack.getFluid())) {
-                                        AddFluidStack(stack, stack.amount);
-                                    }
-                                }
-                            }*/
-                            if (tile instanceof TileFluidCableBase && ((TileFluidCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE && this.StorageFluid != null && this.StorageFluid.amount > 0) {
-                                this.CornerLocation.add(this.pos);
-                                ((TileFluidCableBase) tile).SendFluid(this.getPos(), this.Tick, Math.min(((TileFluidCableBase) tile).MaxSendFluid, this.MaxSendFluid));
-                                will_update = true;
-                            }
-
-                            break;
-                        case PUSH:
-                            if(!(tile instanceof TileFluidCableBase)) {
-                                if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()) && this.StorageFluid != null && this.StorageFluid.amount > 0) {
-                                    AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(this.StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(MaxSendFluid, SendFluidBase), this.FluidReceivers)), true));
-                                    will_update = true;
-                                }
-                            }
-                            break;
-                        case PULL:
-                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
-                                FluidStack stack = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).drain(MaxSendFluid - (StorageFluid != null ? StorageFluid.amount : 0), true);
-                                if(stack != null && (this.StorageFluid == null || this.StorageFluid.getFluid() == stack.getFluid())) {
-                                    AddFluidStack(stack, stack.amount);
-                                    will_update = true;
-                                }
-                            }
-                            break;
-                    }
-                }
-
-            }
-            if(will_update)
                 this.sendUpdates();
-        }
-    }
-
-    @Override
-    public void validate() {
-        super.validate();
-        if(!this.world.isRemote)
-            this.ValidInit = true;
-    }
-
-    private void AddFluidStack(FluidStack stack, int add) {
-        int size = add;
-        if(this.StorageFluid != null)
-            size += this.StorageFluid.amount;
-        this.StorageFluid = new FluidStack(stack.getFluid(), size);
-    }
-    private void AddFluidStack(int add) {
-        if(this.StorageFluid == null)
-            return;
-        this.StorageFluid = new FluidStack(this.StorageFluid.getFluid(), this.StorageFluid.amount + add);
-    }
-
-    private int DividedNotRemainder(int Input, int by) {
-        int Remainder = Input % by;
-        return (Input - Remainder) / by;
-    }
-
-    @Override
-    public void SendFluid(BlockPos StartPos, long tick, int Max) {
-        TileEntity StartTile = world.getTileEntity(StartPos);
-        if (StartTile instanceof TileFluidCableBase) {
-            if(!((TileFluidCableBase) StartTile).CornerLocation.contains(this.pos)) {
-                ((TileFluidCableBase) StartTile).CornerLocation.add(this.pos);
-                for (Map.Entry<EnumFacing, CableConnectionMode> entry : this.facingMode.entrySet()) {
-                    EnumFacing facing = entry.getKey();
-                    TileEntity tile = world.getTileEntity(this.getPos().add(facing.getDirectionVec()));
-
-                    switch (entry.getValue()) {
-                        case NORMAL:
-                        case PUSH:
-                            if (!(tile instanceof TileFluidCableBase)) {
-                                if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()) && ((TileFluidCableBase) StartTile).StorageFluid != null && ((TileFluidCableBase) StartTile).StorageFluid.amount > 0) {
-                                    ((TileFluidCableBase) StartTile).AddFluidStack(-tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite()).fill(new FluidStack(((TileFluidCableBase) StartTile).StorageFluid.getFluid(), this.DividedNotRemainder(Math.min(Max, ((TileFluidCableBase) StartTile).SendFluidBase), ((TileFluidCableBase) StartTile).FluidReceivers)), true));
-                                }
-                            }
-
-                            if (tile instanceof TileFluidCableBase && ((TileFluidCableBase) tile).facingMode.get(facing.getOpposite()) != CableConnectionMode.CLOSE) {
-                                long nextTick = ((TileFluidCableBase) tile).Tick;
-                                if (nextTick != tick && nextTick != this.Tick) {//前のTickと今のTickとは次が違う場合
-                                    if (((TileFluidCableBase) StartTile).StorageFluid != null && ((TileFluidCableBase) StartTile).StorageFluid.amount > 0) {
-                                        ((TileFluidCableBase) tile).SendFluid(StartPos, this.Tick, Math.min(Max, ((TileFluidCableBase) tile).MaxSendFluid));
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
             }
-        }
-    }
 
-    @Override
-    public void FluidReceiverCountCheck(BlockPos StartPos, long tick) {
-        TileEntity StartTile = world.getTileEntity(StartPos);
-        if(StartTile instanceof TileFluidCableBase) {
-            if(!((TileFluidCableBase) StartTile).CornerLocation.contains(this.pos)) {
-                ((TileFluidCableBase) StartTile).CornerLocation.add(this.pos);
-                for(Map.Entry<EnumFacing, CableConnectionMode> entry : this.facingMode.entrySet()) {
-                    EnumFacing facing = entry.getKey();
-                    TileEntity tile = world.getTileEntity(this.getPos().add(facing.getDirectionVec()));
+            this.Tick++;
 
-                    switch (entry.getValue()) {
-                        case NORMAL:
-                        case PUSH:
-                            if(tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
-                                this.FluidReceivers++;
-                            }
+            boolean ThisHost = this.cableManager.getHostPos() == this.pos;
 
-                            if (tile instanceof TileFluidCableBase) {
-                                long nextTick = ((TileFluidCableBase) tile).Tick;
-                                if (nextTick != tick && nextTick != this.Tick) {//前のTickと今のTickとは次が違う場合
-                                    if (((TileFluidCableBase) StartTile).StorageFluid != null && ((TileFluidCableBase) StartTile).StorageFluid.amount > 0) {
-                                        ((TileFluidCableBase) tile).FluidReceiverCountCheck(StartPos, this.Tick);
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
+            if(1000000L <= this.Tick) {
+                this.Tick = 0L;
+                this.LastChangeTick = 0L;
             }
-        }
-    }
 
-    @Override
-    public DataListManager getNetWorkData() {
-        DataListManager data = super.getNetWorkData();
-        for(EnumFacing facing : this.facingMode.keySet()) {
-            data.addData(this.renderFacingMode.get(facing).getIndex());
-        }
-        return data;
-    }
+            //ケーブルが途中で切れたときに新しいホストに設定。
+            if((this.LastChangeTick + 2) <= this.Tick && !ThisHost) {
+                this.cableManager = new FluidCableManager(this);
+                ThisHost = true;
+            }
 
-    @Override
-    public void ReceivePacketData(DataListManager dataListManager) {
-        super.ReceivePacketData(dataListManager);
-        for(EnumFacing facing : this.facingMode.keySet()) {
-            this.renderFacingMode.replace(facing, CableConnectionMode.getCableMode(dataListManager.getDataInt()));
-        }
-    }
+            if(ThisHost) {
+                this.cableManager.Reset();
+                this.cableManager.PutCableTile(this, this.MaxSendFluid);
+                this.cableManager.setHostTick(this.Tick);
+                //Hostだけ処理する(全探索)。
+                this.ScanCables();
+                this.cableManager.SeparateNetworks();
+                for(TileFluidCableBase cable : this.cableManager.getFluidCables().values()) {
+                    cable.ScanMachines();
+                }
 
-    public void ChangeFacingState(EnumFacing facing) {
-        if(this.CableConnectionFacing[facing.getIndex()] == null) {
-            CableConnectionMode mode = this.facingMode.get(facing);
-            CableConnectionMode next = CableConnectionMode.values()[(mode.getIndex() + 1) % CableConnectionMode.values().length];
-            this.facingMode.replace(facing, next);
+                /*
+                 * ここで送受信の処理
+                 */
+                this.cableManager.Update(this.world);
+            }
         } else {
-            if(this.facingMode.get(facing) == CableConnectionMode.NORMAL) {
-                this.facingMode.replace(facing, CableConnectionMode.CLOSE);
-                TileEntity tile = world.getTileEntity(this.getPos().offset(facing));
-                if(tile instanceof TileFluidCableBase) {
-                    ((TileFluidCableBase) tile).facingMode.replace(facing.getOpposite(), CableConnectionMode.CLOSE);
+
+        }
+    }
+
+    //ここでFacingModeを適用
+    public void ScanCables() {
+        for(EnumFacing facing : EnumFacing.VALUES) {
+            TileEntity tile = this.world.getTileEntity(this.getPos().offset(facing));
+            if(tile instanceof TileFluidCableBase) {
+                TileFluidCableBase cableBase = (TileFluidCableBase) tile;
+                //CableManager が違う場合 CableID が一致しない
+                if(((cableBase.getCableManager().getCableID() != this.cableManager.getCableID()) || (cableBase.getLastUpdateTick() != this.cableManager.getHostTick())) && this.facingMode.get(facing) == CableConnectionMode.NORMAL && cableBase.facingMode.get(facing.getOpposite()) == CableConnectionMode.NORMAL) {
+                    cableBase.OverWriteCableManger(this.cableManager);
+                    cableBase.ScanCables();
                 }
-            } else {
-                this.facingMode.replace(facing, CableConnectionMode.NORMAL);
+            }
+        }
+    }
+
+    //HostのCableManagerに追加
+    //ここでFacingModeを適用
+    public void ScanMachines() {
+        for(EnumFacing facing : EnumFacing.VALUES) {
+            BlockPos tile_pos = this.getPos().offset(facing);
+            TileEntity tile = this.world.getTileEntity(tile_pos);
+            if(!(tile instanceof TileFluidCableBase)) {
+                if (this.facingMode.get(facing) != CableConnectionMode.CLOSE) {
+                    FluidCableManager.CableData cableData = this.cableManager.getCableDataByIndex(this.ECM_Index);
+                    if (cableData != null) {
+                        boolean flag = false;
+
+                        if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite())) {
+                            if (this.facingMode.get(facing) == CableConnectionMode.NORMALCLOSE) {
+                                this.SetFacingState(facing, CableConnectionMode.NORMAL);
+                            }
+
+                            IFluidHandler storage = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, facing.getOpposite());
+
+                            if (storage != null) {
+                                flag = true;
+                                for(int i = 0; i < storage.getTankProperties().length; i++) {
+                                    IFluidTankProperties properties = storage.getTankProperties()[i];
+                                    FluidStack stack = properties.getContents();
+                                    int amount = stack != null ? stack.amount : 0;
+                                    int remaining = properties.getCapacity() - amount;
+                                    if (this.JudgeFluidStack(stack)) {
+                                        if (amount > 0 && properties.canDrain() && this.facingMode.get(facing) != CableConnectionMode.PUSH) {
+                                            cableData.AddMachineProviderPos(tile_pos, facing.getOpposite(), storage, i);
+                                            break;
+                                        }
+
+                                        if (remaining > 0 && properties.canFill() && this.facingMode.get(facing) != CableConnectionMode.PULL) {
+                                            cableData.AddMachineReceiverPos(tile_pos, facing.getOpposite(), storage);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!flag && this.facingMode.get(facing) == CableConnectionMode.NORMAL) {
+                            this.SetFacingState(facing, CableConnectionMode.NORMALCLOSE);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void OverWriteCableManger(FluidCableManager manager) {
+        this.LastUpdateTick = manager.getHostTick();
+        this.LastChangeTick = this.Tick;
+        this.cableManager = manager;
+        this.cableManager.PutCableTile(this, this.MaxSendFluid);
+    }
+
+    public FluidCableManager getCableManager() {
+        return this.cableManager;
+    }
+
+    public int getMaxSendFluid() {
+        return this.MaxSendFluid;
+    }
+
+    public FluidStack getFluidStack() {
+        return this.fluidStack;
+    }
+
+    public boolean JudgeFluidStack(@Nullable FluidStack stack) {
+        return this.fluidStack == null || stack == null || this.fluidStack.getFluid().equals(stack.getFluid());
+    }
+
+    @Override
+    public void ChangeFacingState(EnumFacing facing) {
+        CableConnectionMode now = this.facingMode.get(facing);
+        CableConnectionMode nextMode = CableConnectionMode.getCableMode((now.getIndex() + 1) % CableConnectionMode.values().length);
+        TileEntity neighbor = this.world.getTileEntity(this.getPos().offset(facing));
+        if(neighbor instanceof TileCableBase) {
+            CableConnectionMode neighborMode = ((TileCableBase)neighbor).getFacingMode().get(facing.getOpposite());
+            if(nextMode == CableConnectionMode.NORMAL) {
+                neighborMode = CableConnectionMode.NORMAL;
+            } else if(nextMode == CableConnectionMode.NORMALCLOSE) {
+                neighborMode = CableConnectionMode.CLOSE;
+                nextMode = CableConnectionMode.CLOSE;
+            } else if (nextMode == CableConnectionMode.PULL || nextMode == CableConnectionMode.PUSH) {
+                neighborMode = CableConnectionMode.CLOSE;
+                nextMode = CableConnectionMode.CLOSE;
+            }
+            ((TileCableBase)neighbor).SetFacingState(facing.getOpposite(), neighborMode);
+        } else {
+            FluidCableManager.CableData data = this.cableManager.getCableDataByIndex(this.ECM_Index);
+            if(data != null) {
+                boolean has = data.hasMachineByPos(this.getPos(), facing);
+                if (has) {
+                    if (nextMode == CableConnectionMode.NORMALCLOSE) {
+                        nextMode = CableConnectionMode.CLOSE;
+                    }
+                } else {
+                    if (nextMode == CableConnectionMode.NORMAL || nextMode == CableConnectionMode.CLOSE) {
+                        nextMode = CableConnectionMode.PULL;
+                    }
+                }
             }
         }
 
+        this.SetFacingState(facing, nextMode);
         this.sendUpdates();
     }
 
     @Override
-    public EnumActionResult onSneakRightClick(EntityPlayer player, EnumFacing side, RayTraceResult rayTraceResult) {
-        if(!world.isRemote) {
-            this.invalidate();
-            world.destroyBlock(this.getPos(), true);
-        }
-        return EnumActionResult.SUCCESS;
-    }
-
-    @Override
-    public EnumActionResult onRightClick(EntityPlayer player, EnumFacing side, RayTraceResult rayTraceResult) {
-        this.ChangeFacingState(side);
-        return EnumActionResult.SUCCESS;
-    }
-
-    @Override
-    public void readFromNBT(NBTTagCompound compound) {
-        super.readFromNBT(compound);
-        if(compound.getBoolean("HasFluid")) {
-            this.StorageFluid = FluidStack.loadFluidStackFromNBT(compound.getCompoundTag("Fluid"));
-        }
-        this.FluidReceivers = compound.getInteger("FluidReceivers");
-        this.Tick = compound.getLong("Tick");
-        for(EnumFacing facing : EnumFacing.VALUES) {
-            this.facingMode.replace(facing, CableConnectionMode.getCableMode(compound.getInteger("CableModeIndex_" + facing.getName())));
-        }
-    }
-
-    @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
-        super.writeToNBT(compound);
-        compound.setBoolean("HasFluid", this.StorageFluid != null);
-        if(this.StorageFluid != null)
-            compound.setTag("Fluid", this.StorageFluid.writeToNBT(new NBTTagCompound()));
-        compound.setInteger("FluidReceivers", this.FluidReceivers);
-        compound.setLong("Tick", this.Tick);
-        for(EnumFacing facing : EnumFacing.VALUES) {
-            compound.setInteger("CableModeIndex_" + facing.getName(), this.facingMode.get(facing).getIndex());
-        }
-        return compound;
-    }
-
-    @Override
     public IFluidTankProperties[] getTankProperties() {
-        if (this.StorageFluid != null) {
-            FluidTankProperties properties = new FluidTankProperties(this.StorageFluid, this.MaxSendFluid);
-            return new IFluidTankProperties[]{properties};
-        }
         return new IFluidTankProperties[0];
     }
 
     @Override
     public int fill(FluidStack resource, boolean doFill) {
-        if (this.StorageFluid != null && resource.getFluid() == this.StorageFluid.getFluid()) {
-            int remaining = this.MaxSendFluid - this.StorageFluid.amount;
-            int filled = Math.min(remaining - resource.amount, Math.min(this.MaxSendFluid, resource.amount));
-            if (doFill) {
-                this.StorageFluid.amount += filled;
-            }
-            return filled;
-        } else {
-            int Input = Math.min(resource.amount, this.MaxSendFluid);
-            FluidStack stack = resource.copy();
-            stack.amount = Input;
-            this.StorageFluid = stack;
-            return Input;
-        }
+        return 0;
     }
 
     @Nullable
@@ -367,12 +237,39 @@ public abstract class TileFluidCableBase extends TileCableBase implements IFluid
         return null;
     }
 
-    public boolean hasCapability(@Nonnull Capability<?> capability, EnumFacing facing) {
-        return (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facing)) && this.facingMode.get(facing) != CableConnectionMode.CLOSE;
+    @Override
+    public void readFromNBT(NBTTagCompound compound) {
+        super.readFromNBT(compound);
+        if(compound.getBoolean("HasFluid")) {
+            this.fluidStack = FluidStack.loadFluidStackFromNBT(compound.getCompoundTag("FluidTag"));
+        }
     }
 
-    public <T> T getCapability(@Nonnull Capability<T> capability, EnumFacing facing) {
-        return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY && this.facingMode.get(facing) != CableConnectionMode.CLOSE ? (T) this : super.getCapability(capability, facing);
-        //return super.getCapability(capability, facing);
+    @Override
+    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+        super.writeToNBT(compound);
+        boolean hasFluid = this.fluidStack != null;
+        compound.setBoolean("HasFluid", hasFluid);
+        if(hasFluid) {
+            compound.setTag("FluidTag", this.fluidStack.writeToNBT(new NBTTagCompound()));
+        }
+        return compound;
+    }
+
+    @Override
+    public DataListManager getNetWorkData() {
+        DataListManager data = super.getNetWorkData();
+        boolean hasFluid = this.fluidStack != null;
+        data.addDataBoolean(hasFluid);
+        if(hasFluid)
+            data.addDataTag(this.fluidStack.writeToNBT(new NBTTagCompound()));
+        return data;
+    }
+
+    @Override
+    public void ReceivePacketData(DataListManager data) {
+        super.ReceivePacketData(data);
+        if(data.getDataBoolean())
+            this.fluidStack = FluidStack.loadFluidStackFromNBT(data.getDataTag());
     }
 }

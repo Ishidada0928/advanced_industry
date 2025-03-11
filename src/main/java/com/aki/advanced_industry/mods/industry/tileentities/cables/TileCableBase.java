@@ -1,6 +1,7 @@
 package com.aki.advanced_industry.mods.industry.tileentities.cables;
 
 import com.aki.advanced_industry.api.tile.TileEntityBase;
+import com.aki.advanced_industry.mods.industry.tileentities.cables.fluid.TileFluidCableBase;
 import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
 import com.aki.advanced_industry.mods.industry.util.implement.IMachineConfiguration;
 import com.aki.advanced_industry.mods.industry.util.network.cable.EnergyCableManager;

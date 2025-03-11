@@ -22,7 +22,7 @@ import java.util.*;
 * [上書きするとき、元のCableManagerからそのブロックを削除する]
 * このとき、ホストのTick[2つ]とID[BlockPos]を各ブロックに保存する。-> 循環を防ぐ
 * [Hostが壊されたときは、ホスト以外のブロックのOnUpdateで更新されるTickと、
-* 保存時のTickが異なるので、そのブロックが新しいホストになる(以前のHostを消してデータを移行する)]
+* 保存時のTickが異なるので、そのブロックが新しいホストになる(以前のHostを消す)]
 * [ケーブルが破壊されたときは、ホストからデータを消し、ホストから全探索。]
 * */
 
@@ -160,7 +160,9 @@ public class EnergyCableManager {
 
         //このネットワーク(ケーブル)から容量の違うネットワークを経由したときに使うデータの準備
         for(CableData data : this.cableDataList) {
+            //ECM -> MaxSendEnergy
             HashMap<Integer, Integer> Index_MaxSendEnergy = data.getIndex_MaxSendEnergy();
+            //自分自身を追加
             Index_MaxSendEnergy.put(data.getIndex(), data.getMaxSendEnergy());
             this.SearchCableData(data, Index_MaxSendEnergy, data.getMaxSendEnergy());
         }
@@ -210,7 +212,7 @@ public class EnergyCableManager {
         return this.CableID;
     }
 
-    public static class CableData {
+    public class CableData {
         private final BlockPos HostPos;
         private final int MaxSendEnergy;
 
@@ -260,13 +262,13 @@ public class EnergyCableManager {
         }
 
         public void AddMachineReceiverPos(BlockPos pos, EnumFacing facing, EnergyImplementType type) {
-            Set<Pair<EnumFacing, EnergyImplementType>> set = this.MachineReceiverPos.getOrDefault(pos, new HashSet<>(EnumFacing.VALUES.length * 12));
+            Set<Pair<EnumFacing, EnergyImplementType>> set = this.MachineReceiverPos.getOrDefault(pos, new HashSet<>(EnumFacing.VALUES.length * 5));
             set.add(new Pair<>(facing, type));
             this.MachineReceiverPos.put(pos, set);
         }
 
         public void AddMachineProviderPos(BlockPos pos, EnumFacing facing, EnergyImplementType type) {
-            Set<Pair<EnumFacing, EnergyImplementType>> set = this.MachineProviderPos.getOrDefault(pos, new HashSet<>(EnumFacing.VALUES.length * 12));
+            Set<Pair<EnumFacing, EnergyImplementType>> set = this.MachineProviderPos.getOrDefault(pos, new HashSet<>(EnumFacing.VALUES.length * 5));
             set.add(new Pair<>(facing, type));
             this.MachineProviderPos.put(pos, set);
         }
