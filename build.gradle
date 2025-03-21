@@ -26,7 +26,7 @@ apply plugin: 'org.spongepowered.mixin'
 apply plugin: "com.github.johnrengelman.shadow"
 
 group = 'com.aki'
-version = '1.0.0-SNAPSHOT'
+version = 'v1.0.0-mc1.12.2'
 
 java {
     archivesBaseName = 'advanced_industry'
