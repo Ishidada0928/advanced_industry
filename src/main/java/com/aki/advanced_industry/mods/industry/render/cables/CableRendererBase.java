@@ -8,9 +8,9 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 
 public abstract class CableRendererBase<T extends TileEntity> extends TileEntitySpecialRenderer<T> {
-    public IModelCustom Bridge = null;
-    public IModelCustom Pull = null;
-    public IModelCustom Push = null;
+    public IModelCustom Bridge;
+    public IModelCustom Pull;
+    public IModelCustom Push;
 
     public CableRendererBase() {
         Bridge = AdvancedModelLoader.loadModel(new ResourceLocation(AdvancedIndustryCore.ModID, "models/block/obj/cable_bridge.obj"));
