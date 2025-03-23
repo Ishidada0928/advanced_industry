@@ -12,6 +12,7 @@ public abstract class CableRendererBase<T extends TileEntity> extends TileEntity
     public IModelCustom Pull;
     public IModelCustom Push;
 
+
     public CableRendererBase() {
         Bridge = AdvancedModelLoader.loadModel(new ResourceLocation(AdvancedIndustryCore.ModID, "models/block/obj/cable_bridge.obj"));
         Push = AdvancedModelLoader.loadModel(new ResourceLocation(AdvancedIndustryCore.ModID, "models/block/obj/cable_push.obj"));
