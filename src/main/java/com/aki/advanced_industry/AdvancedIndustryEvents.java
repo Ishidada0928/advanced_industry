@@ -4,7 +4,7 @@ import com.aki.advanced_industry.api.util.RaytraceUtil;
 import com.aki.advanced_industry.mods.industry.util.WrenchUtil;
 import com.aki.advanced_industry.mods.industry.util.implement.IBlockFacingBound;
 import com.aki.advanced_industry.mods.industry.util.implement.IMachineConfiguration;
-import com.aki.mcutils.APICore.Utils.list.Pair;
+import com.aki.akisutils.apis.util.list.Pair;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;

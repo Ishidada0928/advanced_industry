@@ -2,8 +2,7 @@ package com.aki.advanced_industry.mods.industry.tileentities.misc;
 
 import com.aki.advanced_industry.api.tile.TileEntityInventoryBase;
 import com.aki.advanced_industry.mods.industry.recipe.CrushingRecipeUtils;
-import com.aki.advanced_industry.api.tile.TileEntityBase;
-import com.aki.mcutils.APICore.DataManage.DataListManager;
+import com.aki.akisutils.apis.data.manager.DataListManager;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;

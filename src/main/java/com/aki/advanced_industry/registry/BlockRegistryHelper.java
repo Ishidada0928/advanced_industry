@@ -1,6 +1,6 @@
 package com.aki.advanced_industry.registry;
 
-import com.aki.mcutils.APICore.Utils.list.Pair;
+import com.aki.akisutils.apis.util.list.Pair;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.item.Item;

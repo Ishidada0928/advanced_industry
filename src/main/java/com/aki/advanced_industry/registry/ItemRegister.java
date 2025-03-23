@@ -1,7 +1,6 @@
 package com.aki.advanced_industry.registry;
 
-import com.aki.mcutils.APICore.Utils.list.Pair;
-import net.minecraft.block.Block;
+import com.aki.akisutils.apis.util.list.Pair;
 import net.minecraft.item.Item;
 import net.minecraftforge.event.RegistryEvent;
 

@@ -8,7 +8,7 @@ import com.aki.advanced_industry.api.packet.IPacketTileData;
 import com.aki.advanced_industry.api.packet.IPacketTileGuiUpdate;
 import com.aki.advanced_industry.api.packet.PacketTileData;
 import com.aki.advanced_industry.api.packet.PacketTileDataRequest;
-import com.aki.mcutils.APICore.DataManage.DataListManager;
+import com.aki.akisutils.apis.data.manager.DataListManager;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;

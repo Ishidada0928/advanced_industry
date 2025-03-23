@@ -1,11 +1,9 @@
 package com.aki.advanced_industry.mods.industry.tileentities.cables;
 
 import com.aki.advanced_industry.api.tile.TileEntityBase;
-import com.aki.advanced_industry.mods.industry.tileentities.cables.fluid.TileFluidCableBase;
 import com.aki.advanced_industry.mods.industry.util.enums.CableConnectionMode;
 import com.aki.advanced_industry.mods.industry.util.implement.IMachineConfiguration;
-import com.aki.advanced_industry.mods.industry.util.network.cable.EnergyCableManager;
-import com.aki.mcutils.APICore.DataManage.DataListManager;
+import com.aki.akisutils.apis.data.manager.DataListManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;

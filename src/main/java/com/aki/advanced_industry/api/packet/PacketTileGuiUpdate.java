@@ -1,6 +1,6 @@
 package com.aki.advanced_industry.api.packet;
 
-import com.aki.mcutils.APICore.DataManage.DataListManager;
+import com.aki.akisutils.apis.data.manager.DataListManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -47,14 +47,14 @@ public class PacketTileGuiUpdate implements IMessageHandler<PacketTileGuiUpdate.
         public void toBytes(ByteBuf dataStream) {
             dataStream.writeLong(this.pos.toLong());
             dataStream.writeInt(this.dimension);
-            parameters.writeDatas(dataStream);
+            parameters.writeData(dataStream);
         }
 
         @Override
         public void fromBytes(ByteBuf dataStream) {
             this.pos = BlockPos.fromLong(dataStream.readLong());
             this.dimension = dataStream.readInt();
-            this.parameters.readDatas(dataStream);
+            this.parameters.readData(dataStream);
         }
     }
 }

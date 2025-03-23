@@ -1,6 +1,6 @@
 package com.aki.advanced_industry.api.util;
 
-import com.aki.mcutils.APICore.Utils.list.Pair;
+import com.aki.akisutils.apis.util.list.Pair;
 
 public interface IMoveGuiObject {
     boolean IsMoval(int mouseX, int mouseY);

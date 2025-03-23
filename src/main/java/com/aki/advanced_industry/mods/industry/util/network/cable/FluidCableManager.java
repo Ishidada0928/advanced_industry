@@ -2,7 +2,7 @@ package com.aki.advanced_industry.mods.industry.util.network.cable;
 
 import com.aki.advanced_industry.mods.industry.tileentities.cables.fluid.TileFluidCableBase;
 import com.aki.advanced_industry.mods.industry.util.list.Triple;
-import com.aki.mcutils.APICore.Utils.list.Pair;
+import com.aki.akisutils.apis.util.list.Pair;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;

@@ -5,7 +5,7 @@ import cofh.redstoneflux.api.IEnergyReceiver;
 import cofh.redstoneflux.api.IEnergyStorage;
 import com.aki.advanced_industry.mods.industry.tileentities.cables.energy.TileEnergyCableBase;
 import com.aki.advanced_industry.mods.industry.util.enums.EnergyImplementType;
-import com.aki.mcutils.APICore.Utils.list.Pair;
+import com.aki.akisutils.apis.util.list.Pair;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;

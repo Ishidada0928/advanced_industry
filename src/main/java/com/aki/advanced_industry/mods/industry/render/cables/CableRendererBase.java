@@ -1,8 +1,8 @@
 package com.aki.advanced_industry.mods.industry.render.cables;
 
 import com.aki.advanced_industry.AdvancedIndustryCore;
-import com.aki.mcutils.APICore.Loaders.ObjModel.AdvancedModelLoader;
-import com.aki.mcutils.APICore.Loaders.ObjModel.IModelCustom;
+import com.aki.akisutils.apis.renderer.mqo_obj.AdvancedModelLoader;
+import com.aki.akisutils.apis.renderer.mqo_obj.IModelCustom;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;

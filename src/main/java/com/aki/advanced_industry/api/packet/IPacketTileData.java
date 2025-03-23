@@ -1,6 +1,6 @@
 package com.aki.advanced_industry.api.packet;
 
-import com.aki.mcutils.APICore.DataManage.DataListManager;
+import com.aki.akisutils.apis.data.manager.DataListManager;
 
 public interface IPacketTileData {
     public DataListManager getNetWorkData();
